@@ -23,7 +23,7 @@ import org.sunbird.learner.util.CourseBatchUtil;
 import org.sunbird.learner.util.Util;
 
 public class CertificateActor extends BaseActor {
-  
+
 
   private static enum ResponseMessage {
     SUBMITTED("Certificates issue action for Course Batch Id {0} submitted Successfully!"),
@@ -41,7 +41,7 @@ public class CertificateActor extends BaseActor {
 
   @Override
   public void onReceive(Request request) throws Throwable {
-    Util.initializeContext(request, TelemetryEnvKey.USER, this.getClass().getName());
+    Util.initializeContext(request, TelemetryEnvKey.USER);
 
     String requestedOperation = request.getOperation();
     switch (requestedOperation) {
@@ -61,15 +61,15 @@ public class CertificateActor extends BaseActor {
     List<String> userIds = (List<String>) request.getRequest().get(JsonKey.USER_IDs);
     final boolean reIssue = isReissue(request.getContext().get(CourseJsonKey.REISSUE));
     Map<String, Object> courseBatchResponse =
-        CourseBatchUtil.validateCourseBatch(request.getRequestContext(), courseId, batchId);
+            CourseBatchUtil.validateCourseBatch(request.getRequestContext(), courseId, batchId);
     if (null == courseBatchResponse.get("cert_templates")) {
       ProjectCommonException.throwClientErrorException(
-          ResponseCode.CLIENT_ERROR, "No certificate templates associated with " + batchId);
+              ResponseCode.CLIENT_ERROR, "No certificate templates associated with " + batchId);
     }
     Response response = new Response();
     Map<String, Object> resultData = new HashMap<>();
     resultData.put(
-        JsonKey.STATUS, MessageFormat.format(ResponseMessage.SUBMITTED.getValue(), batchId));
+            JsonKey.STATUS, MessageFormat.format(ResponseMessage.SUBMITTED.getValue(), batchId));
     resultData.put(JsonKey.BATCH_ID, batchId);
     resultData.put(JsonKey.COURSE_ID, courseId);
     resultData.put(JsonKey.COLLECTION_ID, courseId);
@@ -78,9 +78,9 @@ public class CertificateActor extends BaseActor {
       pushInstructionEvent(batchId, courseId, userIds, reIssue);
     } catch (Exception e) {
       logger.error(request.getRequestContext(), "issueCertificate pushInstructionEvent error for courseId="
-                      + courseId + ", batchId=" + batchId, e);
+              + courseId + ", batchId=" + batchId, e);
       resultData.put(
-          JsonKey.STATUS, MessageFormat.format(ResponseMessage.FAILED.getValue(), batchId));
+              JsonKey.STATUS, MessageFormat.format(ResponseMessage.FAILED.getValue(), batchId));
     }
     sender().tell(response, self());
   }
@@ -105,46 +105,46 @@ public class CertificateActor extends BaseActor {
    * @throws Exception
    */
   private void pushInstructionEvent(
-      String batchId, String courseId, List<String> userIds, boolean reIssue) throws Exception {
+          String batchId, String courseId, List<String> userIds, boolean reIssue) throws Exception {
     Map<String, Object> data = new HashMap<>();
 
     data.put(
-        CourseJsonKey.ACTOR,
-        new HashMap<String, Object>() {
-          {
-            put(JsonKey.ID, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getActorId());
-            put(JsonKey.TYPE, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getActorType());
-          }
-        });
+            CourseJsonKey.ACTOR,
+            new HashMap<String, Object>() {
+              {
+                put(JsonKey.ID, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getActorId());
+                put(JsonKey.TYPE, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getActorType());
+              }
+            });
 
     String id = OneWayHashing.encryptVal(batchId + CourseJsonKey.UNDERSCORE + courseId);
     data.put(
-        CourseJsonKey.OBJECT,
-        new HashMap<String, Object>() {
-          {
-            put(JsonKey.ID, id);
-            put(JsonKey.TYPE, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getType());
-          }
-        });
+            CourseJsonKey.OBJECT,
+            new HashMap<String, Object>() {
+              {
+                put(JsonKey.ID, id);
+                put(JsonKey.TYPE, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getType());
+              }
+            });
 
     data.put(CourseJsonKey.ACTION, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getAction());
 
     data.put(
-        CourseJsonKey.E_DATA,
-        new HashMap<String, Object>() {
-          {
-            if (CollectionUtils.isNotEmpty(userIds)) {
-              put(JsonKey.USER_IDs, userIds);
-            }
-            put(JsonKey.BATCH_ID, batchId);
-            put(JsonKey.COURSE_ID, courseId);
-            put(CourseJsonKey.ACTION, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getAction());
-            put(CourseJsonKey.ITERATION, 1);
-            if (reIssue) {
-              put(CourseJsonKey.REISSUE, true);
-            }
-          }
-        });
+            CourseJsonKey.E_DATA,
+            new HashMap<String, Object>() {
+              {
+                if (CollectionUtils.isNotEmpty(userIds)) {
+                  put(JsonKey.USER_IDs, userIds);
+                }
+                put(JsonKey.BATCH_ID, batchId);
+                put(JsonKey.COURSE_ID, courseId);
+                put(CourseJsonKey.ACTION, InstructionEvent.ISSUE_COURSE_CERTIFICATE.getAction());
+                put(CourseJsonKey.ITERATION, 1);
+                if (reIssue) {
+                  put(CourseJsonKey.REISSUE, true);
+                }
+              }
+            });
     String topic = ProjectUtil.getConfigValue("kafka_topics_certificate_instruction");
     InstructionEventGenerator.pushInstructionEvent(batchId, topic, data);
   }

@@ -31,11 +31,11 @@ public abstract class BaseActor extends UntypedAbstractActor {
     if (message instanceof Request) {
       Request request = (Request) message;
       String operation = request.getOperation();
-      logger.debug(request.getRequestContext(), "BaseActor: onReceive called for operation: " + operation);
+      logger.info(request.getRequestContext(), "BaseActor: onReceive called for operation: " + operation);
       try {
         onReceive(request);
       } catch (Exception e) {
-        logger.debug(request.getRequestContext(), "BaseActor: FAILED onReceive called for operation: " + operation);
+        logger.info(request.getRequestContext(), "BaseActor: FAILED onReceive called for operation: " + operation);
         onReceiveException(operation, e);
       }
     }
@@ -47,10 +47,10 @@ public abstract class BaseActor extends UntypedAbstractActor {
 
   public void unSupportedMessage() throws Exception {
     ProjectCommonException exception =
-        new ProjectCommonException(
-            ResponseCode.invalidRequestData.getErrorCode(),
-            ResponseCode.invalidRequestData.getErrorMessage(),
-            ResponseCode.CLIENT_ERROR.getResponseCode());
+            new ProjectCommonException(
+                    ResponseCode.invalidRequestData.getErrorCode(),
+                    ResponseCode.invalidRequestData.getErrorMessage(),
+                    ResponseCode.CLIENT_ERROR.getResponseCode());
     sender().tell(exception, self());
   }
 
@@ -62,20 +62,20 @@ public abstract class BaseActor extends UntypedAbstractActor {
   public void onReceiveUnsupportedMessage(String callerName) {
     logger.info(null, callerName + ": unsupported operation");
     ProjectCommonException exception =
-        new ProjectCommonException(
-            ResponseCode.invalidOperationName.getErrorCode(),
-            ResponseCode.invalidOperationName.getErrorMessage(),
-            ResponseCode.CLIENT_ERROR.getResponseCode());
+            new ProjectCommonException(
+                    ResponseCode.invalidOperationName.getErrorCode(),
+                    ResponseCode.invalidOperationName.getErrorMessage(),
+                    ResponseCode.CLIENT_ERROR.getResponseCode());
     sender().tell(exception, self());
   }
 
   protected void onReceiveException(String callerName, Exception exception) throws Exception {
     logger.error(null,
-        "Exception in message processing for: "
-            + callerName
-            + " :: message: "
-            + exception.getMessage(),
-        exception);
+            "Exception in message processing for: "
+                    + callerName
+                    + " :: message: "
+                    + exception.getMessage(),
+            exception);
     sender().tell(exception, self());
   }
 
@@ -87,21 +87,21 @@ public abstract class BaseActor extends UntypedAbstractActor {
       return actor;
     } else {
       select =
-          (BaseMWService.getRemoteRouter(RequestRouter.class.getSimpleName()) == null
-              ? (BaseMWService.getRemoteRouter(BackgroundRequestRouter.class.getSimpleName()))
-              : BaseMWService.getRemoteRouter(RequestRouter.class.getSimpleName()));
+              (BaseMWService.getRemoteRouter(RequestRouter.class.getSimpleName()) == null
+                      ? (BaseMWService.getRemoteRouter(BackgroundRequestRouter.class.getSimpleName()))
+                      : BaseMWService.getRemoteRouter(RequestRouter.class.getSimpleName()));
       CompletionStage<ActorRef> futureActor =
-          select.resolveOneCS(Duration.create(waitTime, "seconds"));
+              select.resolveOneCS(Duration.create(waitTime, "seconds"));
       try {
         actor = futureActor.toCompletableFuture().get();
       } catch (Exception e) {
         logger.error(null,
-            "InterServiceCommunicationImpl : getResponse - unable to get actorref from actorselection "
-                + e.getMessage(),
-            e);
+                "InterServiceCommunicationImpl : getResponse - unable to get actorref from actorselection "
+                        + e.getMessage(),
+                e);
       }
       return actor;
     }
   }
-  
+
 }

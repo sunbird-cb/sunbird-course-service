@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
+
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit
 import org.codehaus.jackson.map.ObjectMapper
@@ -43,7 +44,7 @@ class CourseEnrolmentTest extends FlatSpec with Matchers with MockFactory {
         val response = callActor(getEnrolRequest(), Props(new CourseEnrolmentActor(null)(cacheUtil).setDao(courseDao, userDao, groupDao)))
         assert("Success".equalsIgnoreCase(response.get("response").asInstanceOf[String]))
     }
-    
+
     "On invalid course batch" should "return client error" in  {
         (courseDao.readById(_: String, _: String,_: RequestContext)).expects(*,*,*).returns(null)
         (userDao.read(_: RequestContext, _: String,_: String,_: String)).expects(*,*,*,*).returns(null)
@@ -150,7 +151,7 @@ class CourseEnrolmentTest extends FlatSpec with Matchers with MockFactory {
         userCourse.setCourseId("do_11305605610466508811")
         userCourse.setBatchId("0130598559365038081")
         (userDao.listEnrolments(_: RequestContext, _: String)).expects(*,*).returns(getEnrolmentLists())
-            val response = callActor(getListEnrolRequest(), Props(new CourseEnrolmentActor(null)(cacheUtil).setDao(courseDao, userDao, groupDao)))
+        val response = callActor(getListEnrolRequest(), Props(new CourseEnrolmentActor(null)(cacheUtil).setDao(courseDao, userDao, groupDao)))
         println(response)
         assert(null != response)
     }
@@ -160,10 +161,10 @@ class CourseEnrolmentTest extends FlatSpec with Matchers with MockFactory {
         userCourse.setActive(true)
         userCourse.setCourseId("do_11305984881537024012255")
         userCourse.setBatchId("0130598559365038081")
-        
+
         val enrolmentsString = "[{\"dateTime\":1594219912979,\"lastReadContentStatus\":2,\"completionpercentage\":100,\"enrolledDate\":\"1594219912979\",\"addedBy\":\"6cf06951-55fe-2a81-4e37-4475428ece80\",\"delta\":null,\"active\":true,\"contentstatus\":{\"do_11305605610466508811\":2},\"batchId\":\"0130598559365038081\",\"userId\":\"95e4942d-cbe8-477d-aebd-ad8e6de4bfc8\",\"certificates\":[],\"completedOn\":1595422618082,\"grade\":null,\"progress\":1,\"lastReadContentId\":\"do_11305605610466508811\",\"courseId\":\"do_11305984881537024012255\",\"status\":2},{\"dateTime\":1594219912979,\"completionpercentage\":0,\"enrolledDate\":\"1594219912978\",\"addedBy\":\"6cf06951-55fe-2a81-4e37-4475428ece80\",\"delta\":null,\"active\":true,\"batchId\":\"0130598559365038083\",\"userId\":\"95e4942d-cbe8-477d-aebd-ad8e6de4bfc8\",\"certificates\":[],\"grade\":null,\"progress\":0,\"lastReadContentId\":\"do_11305605610466508811\",\"courseId\":\"do_11305984881537024012255\",\"status\":0}]"
         val enrolmentsList = mapper.readValue(enrolmentsString, classOf[java.util.List[java.util.Map[String, AnyRef]]])
-        
+
         (userDao.listEnrolments(_: RequestContext, _: String)).expects(*,*).returns(enrolmentsList)
         val response = callActor(getListEnrolRequest(), Props(new CourseEnrolmentActor(null)(cacheUtil).setDao(courseDao, userDao, groupDao)))
         println(response)
@@ -303,7 +304,7 @@ class CourseEnrolmentTest extends FlatSpec with Matchers with MockFactory {
         val responseString = "{\"id\":null,\"ver\":null,\"ts\":null,\"params\":null,\"responseCode\":\"OK\",\"result\":{\"response\":[{\"agg\":{\"completedCount\":1},\"user_id\":\"95e4942d-cbe8-477d-aebd-ad8e6de4bfc8\",\"activity_type\":\"Course\",\"agg_last_updated\":{\"completedCount\":1595506598142},\"activity_id\":\"do_11305984881537024012255\",\"context_id\":\"cb:0130598559365038081\"}]}}"
         JsonUtil.deserialize(responseString, classOf[Response])
     }
-    
+
     private def getBatchWithValidEnrolmentEndDateAndBatchEndDate(): CourseBatch = {
         val startDate = sd.format(simpleDateFormat.parse(LocalDateTime.now().minusDays(3).format(dateTimeFormatter)))
         val enrolmentEndDate = sd.format(simpleDateFormat.parse(LocalDateTime.now().plusDays(7).format(dateTimeFormatter)))

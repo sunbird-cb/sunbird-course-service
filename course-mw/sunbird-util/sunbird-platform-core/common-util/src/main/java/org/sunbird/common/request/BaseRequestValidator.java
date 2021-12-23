@@ -28,9 +28,9 @@ public class BaseRequestValidator {
   public void validateParam(String value, ResponseCode error) {
     if (StringUtils.isBlank(value)) {
       throw new ProjectCommonException(
-          error.getErrorCode(),
-          error.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              error.getErrorCode(),
+              error.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
   }
 
@@ -44,9 +44,9 @@ public class BaseRequestValidator {
   public void validateParam(String value, ResponseCode error, String errorMsgArgument) {
     if (StringUtils.isBlank(value)) {
       throw new ProjectCommonException(
-          error.getErrorCode(),
-          MessageFormat.format(error.getErrorMessage(), errorMsgArgument),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              error.getErrorCode(),
+              MessageFormat.format(error.getErrorMessage(), errorMsgArgument),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
   }
 
@@ -64,19 +64,19 @@ public class BaseRequestValidator {
       maximumSizeAllowed = Integer.valueOf(ProjectUtil.getConfigValue(paramName).trim());
     } catch (NumberFormatException e) {
       ProjectCommonException.throwServerErrorException(
-          ResponseCode.errorInvalidConfigParamValue,
-          MessageFormat.format(
-              ResponseCode.errorInvalidConfigParamValue.getErrorMessage(),
-              ProjectUtil.getConfigValue(key).trim(),
-              key));
+              ResponseCode.errorInvalidConfigParamValue,
+              MessageFormat.format(
+                      ResponseCode.errorInvalidConfigParamValue.getErrorMessage(),
+                      ProjectUtil.getConfigValue(key).trim(),
+                      key));
     }
     if (listValue.size() > maximumSizeAllowed) {
       ProjectCommonException.throwClientErrorException(
-          ResponseCode.errorMaxSizeExceeded,
-          MessageFormat.format(
-              ResponseCode.errorMaxSizeExceeded.getErrorMessage(),
-              key,
-              String.valueOf(maximumSizeAllowed)));
+              ResponseCode.errorMaxSizeExceeded,
+              MessageFormat.format(
+                      ResponseCode.errorMaxSizeExceeded.getErrorMessage(),
+                      key,
+                      String.valueOf(maximumSizeAllowed)));
     }
   }
 
@@ -90,11 +90,11 @@ public class BaseRequestValidator {
    */
   public ProjectCommonException createExceptionByResponseCode(ResponseCode code, int errorCode) {
     if (code == null) {
-     logger.info(null, "ResponseCode object is coming as null");
+      logger.info(null, "ResponseCode object is coming as null");
       return new ProjectCommonException(
-          ResponseCode.invalidData.getErrorCode(),
-          ResponseCode.invalidData.getErrorMessage(),
-          errorCode);
+              ResponseCode.invalidData.getErrorCode(),
+              ResponseCode.invalidData.getErrorMessage(),
+              errorCode);
     }
     return new ProjectCommonException(code.getErrorCode(), code.getErrorMessage(), errorCode);
   }
@@ -108,18 +108,18 @@ public class BaseRequestValidator {
    * @return custom project exception
    */
   public ProjectCommonException createExceptionByResponseCode(
-      ResponseCode code, int errorCode, String errorMsgArgument) {
+          ResponseCode code, int errorCode, String errorMsgArgument) {
     if (code == null) {
-     logger.info(null, "ResponseCode object is coming as null");
+      logger.info(null, "ResponseCode object is coming as null");
       return new ProjectCommonException(
-          ResponseCode.invalidData.getErrorCode(),
-          ResponseCode.invalidData.getErrorMessage(),
-          errorCode);
+              ResponseCode.invalidData.getErrorCode(),
+              ResponseCode.invalidData.getErrorMessage(),
+              errorCode);
     }
     return new ProjectCommonException(
-        code.getErrorCode(),
-        MessageFormat.format(code.getErrorMessage(), errorMsgArgument),
-        errorCode);
+            code.getErrorCode(),
+            MessageFormat.format(code.getErrorMessage(), errorMsgArgument),
+            errorCode);
   }
 
   /**
@@ -131,21 +131,21 @@ public class BaseRequestValidator {
   public void checkMandatoryFieldsPresent(Map<String, Object> data, String... keys) {
     if (MapUtils.isEmpty(data)) {
       throw new ProjectCommonException(
-          ResponseCode.invalidRequestData.getErrorCode(),
-          ResponseCode.invalidRequestData.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.invalidRequestData.getErrorCode(),
+              ResponseCode.invalidRequestData.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     Arrays.stream(keys)
-        .forEach(
-            key -> {
-              if (StringUtils.isEmpty((String) data.get(key))) {
-                throw new ProjectCommonException(
-                    ResponseCode.mandatoryParamsMissing.getErrorCode(),
-                    ResponseCode.mandatoryParamsMissing.getErrorMessage(),
-                    ResponseCode.CLIENT_ERROR.getResponseCode(),
-                    key);
-              }
-            });
+            .forEach(
+                    key -> {
+                      if (StringUtils.isEmpty((String) data.get(key))) {
+                        throw new ProjectCommonException(
+                                ResponseCode.mandatoryParamsMissing.getErrorCode(),
+                                ResponseCode.mandatoryParamsMissing.getErrorMessage(),
+                                ResponseCode.CLIENT_ERROR.getResponseCode(),
+                                key);
+                      }
+                    });
   }
   /**
    * Method to check whether given mandatory fields is in given map or not. also check the instance
@@ -155,29 +155,29 @@ public class BaseRequestValidator {
    * @param mandatoryParamsList List of string represents the mandatory fields.
    */
   public void checkMandatoryFieldsPresent(
-      Map<String, Object> data, List<String> mandatoryParamsList) {
+          Map<String, Object> data, List<String> mandatoryParamsList) {
     if (MapUtils.isEmpty(data)) {
       throw new ProjectCommonException(
-          ResponseCode.invalidRequestData.getErrorCode(),
-          ResponseCode.invalidRequestData.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.invalidRequestData.getErrorCode(),
+              ResponseCode.invalidRequestData.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     mandatoryParamsList.forEach(
-        key -> {
-          if (StringUtils.isEmpty((String) data.get(key))) {
-            throw new ProjectCommonException(
-                ResponseCode.mandatoryParamsMissing.getErrorCode(),
-                ResponseCode.mandatoryParamsMissing.getErrorMessage(),
-                ResponseCode.CLIENT_ERROR.getResponseCode(),
-                key);
-          }
-          if (!(data.get(key) instanceof String)) {
-            throw new ProjectCommonException(
-                ResponseCode.dataTypeError.getErrorCode(),
-                MessageFormat.format(ResponseCode.dataTypeError.getErrorMessage(), key, "String"),
-                ResponseCode.CLIENT_ERROR.getResponseCode());
-          }
-        });
+            key -> {
+              if (StringUtils.isEmpty((String) data.get(key))) {
+                throw new ProjectCommonException(
+                        ResponseCode.mandatoryParamsMissing.getErrorCode(),
+                        ResponseCode.mandatoryParamsMissing.getErrorMessage(),
+                        ResponseCode.CLIENT_ERROR.getResponseCode(),
+                        key);
+              }
+              if (!(data.get(key) instanceof String)) {
+                throw new ProjectCommonException(
+                        ResponseCode.dataTypeError.getErrorCode(),
+                        MessageFormat.format(ResponseCode.dataTypeError.getErrorMessage(), key, "String"),
+                        ResponseCode.CLIENT_ERROR.getResponseCode());
+              }
+            });
   }
 
   /**
@@ -188,25 +188,25 @@ public class BaseRequestValidator {
    * @param exceptionMsg Exception message
    */
   public void checkMandatoryParamsPresent(
-      Map<String, Object> data, String exceptionMsg, String... keys) {
+          Map<String, Object> data, String exceptionMsg, String... keys) {
     if (MapUtils.isEmpty(data)) {
       throw new ProjectCommonException(
-          ResponseCode.invalidRequestData.getErrorCode(),
-          ResponseCode.invalidRequestData.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.invalidRequestData.getErrorCode(),
+              ResponseCode.invalidRequestData.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     Arrays.stream(keys)
-        .forEach(
-            key -> {
-              if (StringUtils.isEmpty((String) data.get(key))) {
-                throw new ProjectCommonException(
-                    ResponseCode.mandatoryParamsMissing.getErrorCode(),
-                    ProjectUtil.formatMessage(
-                        ResponseCode.mandatoryParamsMissing.getErrorMessage(), exceptionMsg),
-                    ResponseCode.CLIENT_ERROR.getResponseCode(),
-                    key);
-              }
-            });
+            .forEach(
+                    key -> {
+                      if (StringUtils.isEmpty((String) data.get(key))) {
+                        throw new ProjectCommonException(
+                                ResponseCode.mandatoryParamsMissing.getErrorCode(),
+                                ProjectUtil.formatMessage(
+                                        ResponseCode.mandatoryParamsMissing.getErrorMessage(), exceptionMsg),
+                                ResponseCode.CLIENT_ERROR.getResponseCode(),
+                                key);
+                      }
+                    });
   }
 
   /**
@@ -221,21 +221,21 @@ public class BaseRequestValidator {
 
     if (MapUtils.isEmpty(data)) {
       throw new ProjectCommonException(
-          ResponseCode.invalidRequestData.getErrorCode(),
-          ResponseCode.invalidRequestData.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.invalidRequestData.getErrorCode(),
+              ResponseCode.invalidRequestData.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     Arrays.stream(keys)
-        .forEach(
-            key -> {
-              if (data.containsKey(key)) {
-                throw new ProjectCommonException(
-                    ResponseCode.unupdatableField.getErrorCode(),
-                    ResponseCode.unupdatableField.getErrorMessage(),
-                    ResponseCode.CLIENT_ERROR.getResponseCode(),
-                    key);
-              }
-            });
+            .forEach(
+                    key -> {
+                      if (data.containsKey(key)) {
+                        throw new ProjectCommonException(
+                                ResponseCode.unupdatableField.getErrorCode(),
+                                ResponseCode.unupdatableField.getErrorMessage(),
+                                ResponseCode.CLIENT_ERROR.getResponseCode(),
+                                key);
+                      }
+                    });
   }
 
   /**
@@ -247,21 +247,21 @@ public class BaseRequestValidator {
   public void checkMandatoryHeadersPresent(Map<String, String[]> data, String... keys) {
     if (MapUtils.isEmpty(data)) {
       throw new ProjectCommonException(
-          ResponseCode.invalidRequestData.getErrorCode(),
-          ResponseCode.invalidRequestData.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.invalidRequestData.getErrorCode(),
+              ResponseCode.invalidRequestData.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     Arrays.stream(keys)
-        .forEach(
-            key -> {
-              if (ArrayUtils.isEmpty(data.get(key))) {
-                throw new ProjectCommonException(
-                    ResponseCode.mandatoryHeadersMissing.getErrorCode(),
-                    ResponseCode.mandatoryHeadersMissing.getErrorMessage(),
-                    ResponseCode.CLIENT_ERROR.getResponseCode(),
-                    key);
-              }
-            });
+            .forEach(
+                    key -> {
+                      if (ArrayUtils.isEmpty(data.get(key))) {
+                        throw new ProjectCommonException(
+                                ResponseCode.mandatoryHeadersMissing.getErrorCode(),
+                                ResponseCode.mandatoryHeadersMissing.getErrorMessage(),
+                                ResponseCode.CLIENT_ERROR.getResponseCode(),
+                                key);
+                      }
+                    });
   }
 
   /**
@@ -272,17 +272,17 @@ public class BaseRequestValidator {
    */
   public void checkForFieldsNotAllowed(Map<String, Object> requestMap, List<String> fields) {
     fields
-        .stream()
-        .forEach(
-            field -> {
-              if (requestMap.containsKey(field)) {
-                throw new ProjectCommonException(
-                    ResponseCode.invalidRequestParameter.getErrorCode(),
-                    ProjectUtil.formatMessage(
-                        ResponseCode.invalidRequestParameter.getErrorMessage(), field),
-                    ResponseCode.CLIENT_ERROR.getResponseCode());
-              }
-            });
+            .stream()
+            .forEach(
+                    field -> {
+                      if (requestMap.containsKey(field)) {
+                        throw new ProjectCommonException(
+                                ResponseCode.invalidRequestParameter.getErrorCode(),
+                                ProjectUtil.formatMessage(
+                                        ResponseCode.invalidRequestParameter.getErrorMessage(), field),
+                                ResponseCode.CLIENT_ERROR.getResponseCode());
+                      }
+                    });
   }
 
   /**
@@ -293,26 +293,26 @@ public class BaseRequestValidator {
    * @param fields List of fields
    */
   public void validateListParamWithPrefix(
-      Map<String, Object> requestMap, String fieldPrefix, String... fields) {
+          Map<String, Object> requestMap, String fieldPrefix, String... fields) {
     Arrays.stream(fields)
-        .forEach(
-            field -> {
-              if (requestMap.containsKey(field)
-                  && null != requestMap.get(field)
-                  && !(requestMap.get(field) instanceof List)) {
+            .forEach(
+                    field -> {
+                      if (requestMap.containsKey(field)
+                              && null != requestMap.get(field)
+                              && !(requestMap.get(field) instanceof List)) {
 
-                String fieldWithPrefix =
-                    fieldPrefix != null ? StringFormatter.joinByDot(fieldPrefix, field) : field;
+                        String fieldWithPrefix =
+                                fieldPrefix != null ? StringFormatter.joinByDot(fieldPrefix, field) : field;
 
-                throw new ProjectCommonException(
-                    ResponseCode.dataTypeError.getErrorCode(),
-                    ProjectUtil.formatMessage(
-                        ResponseCode.dataTypeError.getErrorMessage(),
-                        fieldWithPrefix,
-                        JsonKey.LIST),
-                    ResponseCode.CLIENT_ERROR.getResponseCode());
-              }
-            });
+                        throw new ProjectCommonException(
+                                ResponseCode.dataTypeError.getErrorCode(),
+                                ProjectUtil.formatMessage(
+                                        ResponseCode.dataTypeError.getErrorMessage(),
+                                        fieldWithPrefix,
+                                        JsonKey.LIST),
+                                ResponseCode.CLIENT_ERROR.getResponseCode());
+                      }
+                    });
   }
 
   /**
@@ -335,9 +335,9 @@ public class BaseRequestValidator {
       boolean isValidDate = ProjectUtil.isDateValidFormat(ProjectUtil.YEAR_MONTH_DATE_FORMAT, dob);
       if (!isValidDate) {
         throw new ProjectCommonException(
-            ResponseCode.dateFormatError.getErrorCode(),
-            ResponseCode.dateFormatError.getErrorMessage(),
-            ResponseCode.CLIENT_ERROR.getResponseCode());
+                ResponseCode.dateFormatError.getErrorCode(),
+                ResponseCode.dateFormatError.getErrorMessage(),
+                ResponseCode.CLIENT_ERROR.getResponseCode());
       }
     }
   }
@@ -351,9 +351,9 @@ public class BaseRequestValidator {
   public void validateParamValue(String value, ResponseCode error, String errorMsg) {
     if (StringUtils.isBlank(value)) {
       throw new ProjectCommonException(
-          error.getErrorCode(),
-          MessageFormat.format(error.getErrorMessage(), errorMsg),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              error.getErrorCode(),
+              MessageFormat.format(error.getErrorMessage(), errorMsg),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
   }
   /**
@@ -365,33 +365,33 @@ public class BaseRequestValidator {
    */
   public static void validateUserId(Request request, String userIdKey) {
     if (!(request
-        .getRequest()
-        .get(userIdKey)
-        .equals(request.getContext().get(JsonKey.REQUESTED_BY)))) {
+            .getRequest()
+            .get(userIdKey)
+            .equals(request.getContext().get(JsonKey.REQUESTED_BY)))) {
       throw new ProjectCommonException(
-          ResponseCode.invalidParameterValue.getErrorCode(),
-          ResponseCode.invalidParameterValue.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode(),
-          (String) request.getRequest().get(JsonKey.USER_ID),
-          JsonKey.USER_ID);
+              ResponseCode.invalidParameterValue.getErrorCode(),
+              ResponseCode.invalidParameterValue.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode(),
+              (String) request.getRequest().get(JsonKey.USER_ID),
+              JsonKey.USER_ID);
     }
   }
 
   public void validateSearchRequest(Request request) {
     if (null == request.getRequest().get(JsonKey.FILTERS)) {
       throw new ProjectCommonException(
-          ResponseCode.mandatoryParamsMissing.getErrorCode(),
-          MessageFormat.format(
-              ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.FILTERS),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.mandatoryParamsMissing.getErrorCode(),
+              MessageFormat.format(
+                      ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.FILTERS),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     if (request.getRequest().containsKey(JsonKey.FILTERS)
-        && (!(request.getRequest().get(JsonKey.FILTERS) instanceof Map))) {
+            && (!(request.getRequest().get(JsonKey.FILTERS) instanceof Map))) {
       throw new ProjectCommonException(
-          ResponseCode.dataTypeError.getErrorCode(),
-          MessageFormat.format(
-              ResponseCode.dataTypeError.getErrorMessage(), JsonKey.FILTERS, "Map"),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.dataTypeError.getErrorCode(),
+              MessageFormat.format(
+                      ResponseCode.dataTypeError.getErrorMessage(), JsonKey.FILTERS, "Map"),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     validateSearchRequestFiltersValues(request);
     validateSearchRequestFieldsValues(request);
@@ -399,22 +399,22 @@ public class BaseRequestValidator {
 
   private void validateSearchRequestFieldsValues(Request request) {
     if (request.getRequest().containsKey(JsonKey.FIELDS)
-        && (!(request.getRequest().get(JsonKey.FIELDS) instanceof List))) {
+            && (!(request.getRequest().get(JsonKey.FIELDS) instanceof List))) {
       throw new ProjectCommonException(
-          ResponseCode.dataTypeError.getErrorCode(),
-          MessageFormat.format(
-              ResponseCode.dataTypeError.getErrorMessage(), JsonKey.FIELDS, "List"),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.dataTypeError.getErrorCode(),
+              MessageFormat.format(
+                      ResponseCode.dataTypeError.getErrorMessage(), JsonKey.FIELDS, "List"),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     if (request.getRequest().containsKey(JsonKey.FIELDS)
-        && (request.getRequest().get(JsonKey.FIELDS) instanceof List)) {
+            && (request.getRequest().get(JsonKey.FIELDS) instanceof List)) {
       for (Object obj : (List) request.getRequest().get(JsonKey.FIELDS)) {
         if (!(obj instanceof String)) {
           throw new ProjectCommonException(
-              ResponseCode.dataTypeError.getErrorCode(),
-              MessageFormat.format(
-                  ResponseCode.dataTypeError.getErrorMessage(), JsonKey.FIELDS, "List of String"),
-              ResponseCode.CLIENT_ERROR.getResponseCode());
+                  ResponseCode.dataTypeError.getErrorCode(),
+                  MessageFormat.format(
+                          ResponseCode.dataTypeError.getErrorMessage(), JsonKey.FIELDS, "List of String"),
+                  ResponseCode.CLIENT_ERROR.getResponseCode());
         }
       }
     }
@@ -422,81 +422,73 @@ public class BaseRequestValidator {
 
   private void validateSearchRequestFiltersValues(Request request) {
     if (request.getRequest().containsKey(JsonKey.FILTERS)
-        && ((request.getRequest().get(JsonKey.FILTERS) instanceof Map))) {
+            && ((request.getRequest().get(JsonKey.FILTERS) instanceof Map))) {
       Map<String, Object> map = (Map<String, Object>) request.getRequest().get(JsonKey.FILTERS);
 
       map.forEach(
-          (key, val) -> {
-            if (key == null) {
-              throw new ProjectCommonException(
-                  ResponseCode.invalidParameterValue.getErrorCode(),
-                  MessageFormat.format(
-                      ResponseCode.invalidParameterValue.getErrorMessage(), key, JsonKey.FILTERS),
-                  ResponseCode.CLIENT_ERROR.getResponseCode());
-            }
-            if (val instanceof List) {
-              validateListValues((List) val, key);
-            } else if (val instanceof Map) {
-              validateMapValues((Map) val);
-            } else if (val == null)
-              if (StringUtils.isEmpty((String) val)) {
-                throw new ProjectCommonException(
-                    ResponseCode.invalidParameterValue.getErrorCode(),
-                    MessageFormat.format(
-                        ResponseCode.invalidParameterValue.getErrorMessage(), val, key),
-                    ResponseCode.CLIENT_ERROR.getResponseCode());
-              }
-          });
+              (key, val) -> {
+                if (key == null) {
+                  throw new ProjectCommonException(
+                          ResponseCode.invalidParameterValue.getErrorCode(),
+                          MessageFormat.format(
+                                  ResponseCode.invalidParameterValue.getErrorMessage(), key, JsonKey.FILTERS),
+                          ResponseCode.CLIENT_ERROR.getResponseCode());
+                }
+                if (val instanceof List) {
+                  validateListValues((List) val, key);
+                } else if (val instanceof Map) {
+                  validateMapValues((Map) val);
+                } else if (val == null)
+                  if (StringUtils.isEmpty((String) val)) {
+                    throw new ProjectCommonException(
+                            ResponseCode.invalidParameterValue.getErrorCode(),
+                            MessageFormat.format(
+                                    ResponseCode.invalidParameterValue.getErrorMessage(), val, key),
+                            ResponseCode.CLIENT_ERROR.getResponseCode());
+                  }
+              });
     }
   }
 
   private void validateMapValues(Map val) {
     val.forEach(
-        (k, v) -> {
-          if (k == null || v == null) {
-            throw new ProjectCommonException(
-                ResponseCode.invalidParameterValue.getErrorCode(),
-                MessageFormat.format(ResponseCode.invalidParameterValue.getErrorMessage(), v, k),
-                ResponseCode.CLIENT_ERROR.getResponseCode());
-          }
-        });
+            (k, v) -> {
+              if (k == null || v == null) {
+                throw new ProjectCommonException(
+                        ResponseCode.invalidParameterValue.getErrorCode(),
+                        MessageFormat.format(ResponseCode.invalidParameterValue.getErrorMessage(), v, k),
+                        ResponseCode.CLIENT_ERROR.getResponseCode());
+              }
+            });
   }
 
   private void validateListValues(List val, String key) {
     val.forEach(
-        v -> {
-          if (v == null) {
-            throw new ProjectCommonException(
-                ResponseCode.invalidParameterValue.getErrorCode(),
-                MessageFormat.format(ResponseCode.invalidParameterValue.getErrorMessage(), v, key),
-                ResponseCode.CLIENT_ERROR.getResponseCode());
-          }
-        });
+            v -> {
+              if (v == null) {
+                throw new ProjectCommonException(
+                        ResponseCode.invalidParameterValue.getErrorCode(),
+                        MessageFormat.format(ResponseCode.invalidParameterValue.getErrorMessage(), v, key),
+                        ResponseCode.CLIENT_ERROR.getResponseCode());
+              }
+            });
   }
 
   public void validateEmail(String email) {
     if (!EmailValidator.isEmailValid(email)) {
       throw new ProjectCommonException(
-          ResponseCode.emailFormatError.getErrorCode(),
-          ResponseCode.emailFormatError.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.emailFormatError.getErrorCode(),
+              ResponseCode.emailFormatError.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
   }
 
   public void validatePhone(String phone) {
     if (!ProjectUtil.validatePhone(phone, null)) {
       throw new ProjectCommonException(
-          ResponseCode.phoneNoFormatError.getErrorCode(),
-          ResponseCode.phoneNoFormatError.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
-    }
-  }
-  
-  public void validateRequestedBy(String requestedBy) {
-    if(StringUtils.isBlank(requestedBy) || JsonKey.ANONYMOUS.contentEquals(requestedBy)) {
-      throw new ProjectCommonException(ResponseCode.unAuthorized.getErrorCode(),
-              ResponseCode.unAuthorized.getErrorMessage(),
-              ResponseCode.UNAUTHORIZED.getResponseCode());
+              ResponseCode.phoneNoFormatError.getErrorCode(),
+              ResponseCode.phoneNoFormatError.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
   }
 }

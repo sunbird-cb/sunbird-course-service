@@ -54,7 +54,7 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
 
   @Override
   public void onReceive(Request request) throws Throwable {
-    Util.initializeContext(request, TelemetryEnvKey.USER, this.getClass().getName());
+    Util.initializeContext(request, TelemetryEnvKey.USER);
     if (request.getOperation().equalsIgnoreCase(ActorOperations.PROCESS_BULK_UPLOAD.getValue())) {
       process(request);
     } else {
@@ -68,9 +68,9 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
     logger.info(actorMessage.getRequestContext(), "process started in BulkUploadBackGroundJobActor : " + processId);
     int status = (int) dataMap.get(JsonKey.STATUS);
     if (!(status == (ProjectUtil.BulkProcessStatus.COMPLETED.getValue())
-        || status == (ProjectUtil.BulkProcessStatus.INTERRUPT.getValue()))) {
+            || status == (ProjectUtil.BulkProcessStatus.INTERRUPT.getValue()))) {
       TypeReference<List<Map<String, Object>>> mapType =
-          new TypeReference<List<Map<String, Object>>>() {};
+              new TypeReference<List<Map<String, Object>>>() {};
       List<Map<String, Object>> jsonList = null;
       try {
         jsonList = mapper.readValue((String) dataMap.get(JsonKey.DATA), mapType);
@@ -78,7 +78,7 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
         logger.error(actorMessage.getRequestContext(), "Exception occurred while converting json String to List in BulkUploadBackGroundJobActor : ", e);
       }
       if (((String) dataMap.get(JsonKey.OBJECT_TYPE)).equalsIgnoreCase(JsonKey.BATCH_LEARNER_ENROL)
-          || ((String) dataMap.get(JsonKey.OBJECT_TYPE))
+              || ((String) dataMap.get(JsonKey.OBJECT_TYPE))
               .equalsIgnoreCase(JsonKey.BATCH_LEARNER_UNENROL)) {
         processBatchEnrollment(actorMessage.getRequestContext(), jsonList, processId, (String) dataMap.get(JsonKey.OBJECT_TYPE), actorMessage.getContext());
       }
@@ -103,15 +103,15 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
 
       String batchId = (String) batchMap.get(JsonKey.BATCH_ID);
       Future<Map<String, Object>> resultF =
-          esService.getDataByIdentifier(requestContext, ProjectUtil.EsType.courseBatch.getTypeName(), batchId);
+              esService.getDataByIdentifier(requestContext, ProjectUtil.EsType.courseBatch.getTypeName(), batchId);
       Map<String, Object> courseBatchObject =
-          (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(resultF);
+              (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(resultF);
       String msg = validateBatchInfo(courseBatchObject);
       if (msg.equals(JsonKey.SUCCESS)) {
         try {
           List<String> userList =
-              new ArrayList<>(
-                  Arrays.asList((((String) batchMap.get(JsonKey.USER_IDs)).split(","))));
+                  new ArrayList<>(
+                          Arrays.asList((((String) batchMap.get(JsonKey.USER_IDs)).split(","))));
           if (JsonKey.BATCH_LEARNER_ENROL.equalsIgnoreCase(objectType)) {
             validateBatchUserListAndAdd(
                     requestContext, courseBatchObject, batchId, userList, tempFailList, tempSuccessList, context);
@@ -167,11 +167,11 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
     List<Map<String, Object>> userDetails = userOrgService.getUsersByIds(userIds, (String) context.getOrDefault(JsonKey.X_AUTH_TOKEN, ""));
     logger.info(requestContext, "BulkUploadBackGroundJobActor::validateBatchUserListAndAdd::userDetails : " + userDetails);
     Map<String, String> userToRootOrg =
-        userDetails
-            .stream()
-            .collect(
-                Collectors.toMap(
-                    user -> (String) user.get(JsonKey.ID), user -> getRootOrgFromUserMap(user)));
+            userDetails
+                    .stream()
+                    .collect(
+                            Collectors.toMap(
+                                    user -> (String) user.get(JsonKey.ID), user -> getRootOrgFromUserMap(user)));
     // check whether can update user or not
     for (String userId : userIds) {
       if (!userToRootOrg.containsKey(userId) || !createdFor.contains(userToRootOrg.get(userId))) {
@@ -193,9 +193,9 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
       } else {
         addUserCourses(
                 requestContext, batchId,
-            (String) courseBatchObject.get(JsonKey.COURSE_ID),
-            userId,
-            (Map<String, String>) (courseBatchObject.get(JsonKey.COURSE_ADDITIONAL_INFO)), context);
+                (String) courseBatchObject.get(JsonKey.COURSE_ID),
+                userId,
+                (Map<String, String>) (courseBatchObject.get(JsonKey.COURSE_ADDITIONAL_INFO)), context);
       }
       map = new HashMap<>();
       map.put(userId, JsonKey.SUCCESS);
@@ -210,10 +210,10 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
   private String getRootOrgFromUserMap(Map<String, Object> userInfo) {
     String rootOrg = (String) userInfo.get(JsonKey.ROOT_ORG_ID);
     Map<String, Object> registeredOrgInfo =
-        (Map<String, Object>) userInfo.get(JsonKey.REGISTERED_ORG);
+            (Map<String, Object>) userInfo.get(JsonKey.REGISTERED_ORG);
     if (registeredOrgInfo != null && !registeredOrgInfo.isEmpty()) {
       if (null != registeredOrgInfo.get(JsonKey.IS_ROOT_ORG)
-          && (Boolean) registeredOrgInfo.get(JsonKey.IS_ROOT_ORG)) {
+              && (Boolean) registeredOrgInfo.get(JsonKey.IS_ROOT_ORG)) {
         rootOrg = (String) registeredOrgInfo.get(JsonKey.ID);
       }
     }
@@ -246,7 +246,7 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
       insertUserCoursesToES(requestContext, userCourses);
       flag = true;
       Map<String, Object> targetObject =
-          TelemetryUtil.generateTargetObject(userId, JsonKey.USER, JsonKey.UPDATE, null);
+              TelemetryUtil.generateTargetObject(userId, JsonKey.USER, JsonKey.UPDATE, null);
       List<Map<String, Object>> correlatedObject = new ArrayList<>();
       TelemetryUtil.generateCorrelatedObject(batchId, JsonKey.BATCH, null, correlatedObject);
       TelemetryUtil.telemetryProcessingCall(userCourses, targetObject, correlatedObject, context);
@@ -316,11 +316,11 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
           map.put(userId, JsonKey.SUCCESS);
           passedUserList.add(map);
           Map<String, Object> userCoursesMap =
-              mapper.convertValue(userCourses, new TypeReference<Map<String, Object>>() {});
+                  mapper.convertValue(userCourses, new TypeReference<Map<String, Object>>() {});
           if (userCoursesMap.containsKey(JsonKey.COMPLETED_ON)) {
             userCoursesMap.put(
-                JsonKey.COMPLETED_ON,
-                ProjectUtil.formatDate((Date) userCoursesMap.get(JsonKey.COMPLETED_ON)));
+                    JsonKey.COMPLETED_ON,
+                    ProjectUtil.formatDate((Date) userCoursesMap.get(JsonKey.COMPLETED_ON)));
           }
           userCoursesMap.put(JsonKey.DATE_TIME, ProjectUtil.formatDate(ts));
           String id = UserCoursesService.generateUserCourseESId(batchId, userId);
@@ -330,7 +330,7 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
         }
       } catch (Exception ex) {
         logger.error(requestContext, "validateBatchUserListAndRemove Exception Occurred while removing bulk user : "
-                        + userId, ex);
+                + userId, ex);
         Map<String, Object> map = new HashMap<>();
         map.put(userId, ex.getMessage());
         failedUserList.add(map);
@@ -348,12 +348,12 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
     }
     // check whether coursebbatch type is invite only or not ...
     if (ProjectUtil.isNull(courseBatchObject.get(JsonKey.ENROLLMENT_TYPE))
-        || !((String) courseBatchObject.get(JsonKey.ENROLLMENT_TYPE))
+            || !((String) courseBatchObject.get(JsonKey.ENROLLMENT_TYPE))
             .equalsIgnoreCase(JsonKey.INVITE_ONLY)) {
       return ResponseCode.enrollmentTypeValidation.getErrorMessage();
     }
     if (ProjectUtil.isNull(courseBatchObject.get(JsonKey.COURSE_CREATED_FOR))
-        || ((List) courseBatchObject.get(JsonKey.COURSE_CREATED_FOR)).isEmpty()) {
+            || ((List) courseBatchObject.get(JsonKey.COURSE_CREATED_FOR)).isEmpty()) {
       return ResponseCode.courseCreatedForIsNull.getErrorMessage();
     }
     return JsonKey.SUCCESS;
@@ -381,10 +381,10 @@ public class BulkUploadBackGroundJobActor extends BaseActor {
       cassandraOperation.updateRecord(requestContext, bulkDb.getKeySpace(), bulkDb.getTableName(), map);
     } catch (Exception ex) {
       logger.error(requestContext, "Exception occurred while updating status to bulk_upload_process "
-                      + "table in BulkUploadBackGroundJobActor.", ex);
+              + "table in BulkUploadBackGroundJobActor.", ex);
     }
     Response res =
-        cassandraOperation.getRecordByIdentifier(requestContext, bulkDb.getKeySpace(), bulkDb.getTableName(), processId, null);
+            cassandraOperation.getRecordByIdentifier(requestContext, bulkDb.getKeySpace(), bulkDb.getTableName(), processId, null);
     return (((List<Map<String, Object>>) res.get(JsonKey.RESPONSE)).get(0));
   }
 }

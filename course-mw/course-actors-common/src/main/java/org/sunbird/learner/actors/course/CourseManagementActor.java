@@ -35,7 +35,7 @@ public class CourseManagementActor extends BaseActor {
 
     @Override
     public void onReceive(Request request) throws Throwable {
-        Util.initializeContext(request, TelemetryEnvKey.COURSE_CREATE, this.getClass().getName());
+        Util.initializeContext(request, TelemetryEnvKey.COURSE_CREATE);
 
         String requestedOperation = request.getOperation();
         switch (requestedOperation) {

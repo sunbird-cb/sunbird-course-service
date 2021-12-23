@@ -54,7 +54,7 @@ public class CourseBatchUtil {
     req.put(JsonKey.ID, uniqueId);
     req.put(JsonKey.IDENTIFIER, uniqueId);
     Future<String> esResponseF =
-        esUtil.save(requestContext, ProjectUtil.EsType.courseBatch.getTypeName(), uniqueId, req);
+            esUtil.save(requestContext, ProjectUtil.EsType.courseBatch.getTypeName(), uniqueId, req);
     String esResponse = (String) ElasticSearchHelper.getResponseFromFuture(esResponseF);
     logger.info(requestContext, "CourseBatchManagementActor::syncCourseBatchForeground: Sync response for course batch ID = "
             + uniqueId
@@ -64,17 +64,17 @@ public class CourseBatchUtil {
 
   public static Map<String, Object> validateCourseBatch(RequestContext requestContext, String courseId, String batchId) {
     Future<Map<String, Object>> resultF =
-        esUtil.getDataByIdentifier(requestContext, EsType.courseBatch.getTypeName(), batchId);
+            esUtil.getDataByIdentifier(requestContext, EsType.courseBatch.getTypeName(), batchId);
     Map<String, Object> result =
-        (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(resultF);
+            (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(resultF);
     if (MapUtils.isEmpty(result)) {
       ProjectCommonException.throwClientErrorException(
-          ResponseCode.CLIENT_ERROR, "No such batchId exists");
+              ResponseCode.CLIENT_ERROR, "No such batchId exists");
     }
     if (StringUtils.isNotBlank(courseId)
-        && !StringUtils.equals(courseId, (String) result.get(JsonKey.COURSE_ID))) {
+            && !StringUtils.equals(courseId, (String) result.get(JsonKey.COURSE_ID))) {
       ProjectCommonException.throwClientErrorException(
-          ResponseCode.CLIENT_ERROR, "batchId is not linked with courseId");
+              ResponseCode.CLIENT_ERROR, "batchId is not linked with courseId");
     }
     return result;
   }
@@ -82,10 +82,10 @@ public class CourseBatchUtil {
   public static Map<String, Object> validateTemplate(RequestContext requestContext, String templateId) {
     Response templateResponse = getTemplate(requestContext, templateId);
     if (templateResponse == null
-        || MapUtils.isEmpty(templateResponse.getResult())
-        || !(templateResponse.getResult().containsKey(JsonKey.CONTENT) || templateResponse.getResult().containsKey("certificate"))) {
+            || MapUtils.isEmpty(templateResponse.getResult())
+            || !(templateResponse.getResult().containsKey(JsonKey.CONTENT) || templateResponse.getResult().containsKey("certificate"))) {
       ProjectCommonException.throwClientErrorException(
-          ResponseCode.CLIENT_ERROR, "Invalid template Id: " + templateId);
+              ResponseCode.CLIENT_ERROR, "Invalid template Id: " + templateId);
     }
     Map<String, Object> template =
             templateResponse.getResult().containsKey(JsonKey.CONTENT) ?
@@ -107,30 +107,30 @@ public class CourseBatchUtil {
       response = mapper.readValue(responseBody, Response.class);
       if (!ResponseCode.OK.equals(response.getResponseCode())) {
         throw new ProjectCommonException(
-            response.getResponseCode().name(),
-            response.getParams().getErrmsg(),
-            response.getResponseCode().getResponseCode());
+                response.getResponseCode().name(),
+                response.getParams().getErrmsg(),
+                response.getResponseCode().getResponseCode());
       }
     } catch (ProjectCommonException e) {
-      logger.error(requestContext, 
-          "CourseBatchUtil:getResponse ProjectCommonException:"
-              + "Request , Status : "
-              + e.getCode()
-              + " "
-              + e.getMessage()
-              + ",Response Body :"
-              + responseBody, e);
+      logger.error(requestContext,
+              "CourseBatchUtil:getResponse ProjectCommonException:"
+                      + "Request , Status : "
+                      + e.getCode()
+                      + " "
+                      + e.getMessage()
+                      + ",Response Body :"
+                      + responseBody, e);
       throw e;
     } catch (Exception e) {
       e.printStackTrace();
-      logger.error(requestContext, 
-          "CourseBatchUtil:getResponse occurred with error message = "
-              + e.getMessage()
-              + ", Response Body : "
-              + responseBody,
-          e);
+      logger.error(requestContext,
+              "CourseBatchUtil:getResponse occurred with error message = "
+                      + e.getMessage()
+                      + ", Response Body : "
+                      + responseBody,
+              e);
       throwServerErrorException(
-          ResponseCode.SERVER_ERROR, "Exception while validating template with cert service");
+              ResponseCode.SERVER_ERROR, "Exception while validating template with cert service");
     }
     return response;
   }
@@ -186,16 +186,12 @@ public class CourseBatchUtil {
     dateTimeFormat.setTimeZone(TimeZone.getTimeZone(ProjectUtil.getConfigValue(JsonKey.SUNBIRD_TIMEZONE)));
     Map<String, Object> esCourseMap = mapper.convertValue(courseBatch, Map.class);
     changeInDateFormat.forEach(key -> {
-      if (null != esCourseMap.get(key))
+      if (esCourseMap.containsKey(key))
         esCourseMap.put(key, dateTimeFormat.format(esCourseMap.get(key)));
-      else 
-        esCourseMap.put(key, null);
     });
     changeInSimpleDateFormat.forEach(key -> {
-      if (null != esCourseMap.get(key))
+      if (esCourseMap.containsKey(key))
         esCourseMap.put(key, dateFormat.format(esCourseMap.get(key)));
-      else 
-        esCourseMap.put(key, null);
     });
     esCourseMap.put(CourseJsonKey.CERTIFICATE_TEMPLATES_COLUMN, courseBatch.getCertTemplates());
     return esCourseMap;

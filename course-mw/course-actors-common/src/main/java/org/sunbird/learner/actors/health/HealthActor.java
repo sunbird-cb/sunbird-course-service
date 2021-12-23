@@ -41,7 +41,7 @@ public class HealthActor extends BaseActor {
     if (message instanceof Request) {
       try {
         Request actorMessage = message;
-        Util.initializeContext(actorMessage, TelemetryEnvKey.USER, this.getClass().getName());
+        Util.initializeContext(actorMessage, TelemetryEnvKey.USER);
 
         // set request id fto thread loacl...
         if (actorMessage.getOperation().equalsIgnoreCase(ActorOperations.HEALTH_CHECK.getValue())) {
@@ -51,15 +51,15 @@ public class HealthActor extends BaseActor {
         } else if (actorMessage.getOperation().equalsIgnoreCase(ActorOperations.ES.getValue())) {
           esHealthCheck();
         } else if (actorMessage
-            .getOperation()
-            .equalsIgnoreCase(ActorOperations.CASSANDRA.getValue())) {
+                .getOperation()
+                .equalsIgnoreCase(ActorOperations.CASSANDRA.getValue())) {
           cassandraHealthCheck();
         } else {
           ProjectCommonException exception =
-              new ProjectCommonException(
-                  ResponseCode.invalidOperationName.getErrorCode(),
-                  ResponseCode.invalidOperationName.getErrorMessage(),
-                  ResponseCode.CLIENT_ERROR.getResponseCode());
+                  new ProjectCommonException(
+                          ResponseCode.invalidOperationName.getErrorCode(),
+                          ResponseCode.invalidOperationName.getErrorMessage(),
+                          ResponseCode.CLIENT_ERROR.getResponseCode());
           sender().tell(exception, self());
         }
       } catch (Exception ex) {
@@ -69,10 +69,10 @@ public class HealthActor extends BaseActor {
     } else {
       // Throw exception as message body
       ProjectCommonException exception =
-          new ProjectCommonException(
-              ResponseCode.invalidRequestData.getErrorCode(),
-              ResponseCode.invalidRequestData.getErrorMessage(),
-              ResponseCode.CLIENT_ERROR.getResponseCode());
+              new ProjectCommonException(
+                      ResponseCode.invalidRequestData.getErrorCode(),
+                      ResponseCode.invalidRequestData.getErrorMessage(),
+                      ResponseCode.CLIENT_ERROR.getResponseCode());
       sender().tell(exception, self());
     }
   }
@@ -176,20 +176,20 @@ public class HealthActor extends BaseActor {
       String body = "{\"request\":{\"filters\":{\"identifier\":\"test\"}}}";
       Map<String, String> headers = new HashMap<>();
       headers.put(
-          JsonKey.AUTHORIZATION, JsonKey.BEARER + System.getenv(JsonKey.EKSTEP_AUTHORIZATION));
+              JsonKey.AUTHORIZATION, JsonKey.BEARER + System.getenv(JsonKey.EKSTEP_AUTHORIZATION));
       if (StringUtils.isBlank(headers.get(JsonKey.AUTHORIZATION))) {
         headers.put(
-            JsonKey.AUTHORIZATION,
-            PropertiesCache.getInstance().getProperty(JsonKey.EKSTEP_AUTHORIZATION));
+                JsonKey.AUTHORIZATION,
+                PropertiesCache.getInstance().getProperty(JsonKey.EKSTEP_AUTHORIZATION));
         headers.put("Content_Type", "application/json; charset=utf-8");
       }
       String searchBaseUrl = ProjectUtil.getConfigValue(JsonKey.SEARCH_SERVICE_API_BASE_URL);
       String response =
-          HttpUtil.sendPostRequest(
-              searchBaseUrl
-                  + PropertiesCache.getInstance().getProperty(JsonKey.EKSTEP_CONTENT_SEARCH_URL),
-              body,
-              headers);
+              HttpUtil.sendPostRequest(
+                      searchBaseUrl
+                              + PropertiesCache.getInstance().getProperty(JsonKey.EKSTEP_CONTENT_SEARCH_URL),
+                      body,
+                      headers);
       if (response.contains("OK")) {
         responseList.add(ProjectUtil.createCheckResponse(JsonKey.EKSTEP_SERVICE, false, null));
       } else {

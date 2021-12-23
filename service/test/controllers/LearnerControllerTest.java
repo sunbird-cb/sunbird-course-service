@@ -11,8 +11,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.sunbird.common.models.util.JsonKey;
@@ -21,7 +19,6 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.test.Helpers;
 import util.ACTOR_NAMES;
-import util.RequestInterceptor;
 
 /** @author arvind */
 @RunWith(PowerMockRunner.class)
@@ -45,9 +42,9 @@ public class LearnerControllerTest extends BaseApplicationTest {
   @Test
   public void testUpdateContentStateSuccess() {
     JsonNode json =
-        createUpdateContentStateRequest(CONTENT_ID, "Active", generateDatePattern(), COURSE_ID);
+            createUpdateContentStateRequest(CONTENT_ID, "Active", generateDatePattern(), COURSE_ID);
     Http.RequestBuilder req =
-        new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
+            new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
     Result result = Helpers.route(application, req);
     Assert.assertEquals(200, result.status());
   }
@@ -56,7 +53,7 @@ public class LearnerControllerTest extends BaseApplicationTest {
   public void testGetContentStateSuccess() {
     JsonNode json = createGetContentStateRequest(USER_ID, COURSE_ID, BATCH_ID);
     Http.RequestBuilder req =
-        new Http.RequestBuilder().uri(CONTENT_STATE_READ_URL).bodyJson(json).method("POST");
+            new Http.RequestBuilder().uri(CONTENT_STATE_READ_URL).bodyJson(json).method("POST");
     Result result = Helpers.route(application, req);
     Assert.assertEquals(200, result.status());
   }
@@ -72,26 +69,25 @@ public class LearnerControllerTest extends BaseApplicationTest {
 
     JsonNode json = Json.parse(data);
     Http.RequestBuilder req =
-        new Http.RequestBuilder().uri(CONTENT_STATE_READ_URL).bodyJson(json).method("POST");
+            new Http.RequestBuilder().uri(CONTENT_STATE_READ_URL).bodyJson(json).method("POST");
     Result result = Helpers.route(application, req);
     Assert.assertEquals(400, result.status());
   }
 
   @Test
   public void testGetContentStateFailureWithoutUserId() {
-    PowerMockito.when(RequestInterceptor.verifyRequestData(Mockito.any())).thenReturn(JsonKey.ANONYMOUS);
     JsonNode json = createGetContentStateRequest(null, COURSE_ID, BATCH_ID);
     Http.RequestBuilder req =
-        new Http.RequestBuilder().uri(CONTENT_STATE_READ_URL).bodyJson(json).method("POST");
+            new Http.RequestBuilder().uri(CONTENT_STATE_READ_URL).bodyJson(json).method("POST");
     Result result = Helpers.route(application, req);
-    Assert.assertEquals(401, result.status());
+    Assert.assertEquals(400, result.status());
   }
 
   @Test
   public void testGetContentStateFailureWithoutCourseId() {
     JsonNode json = createGetContentStateRequest(USER_ID, null, BATCH_ID);
     Http.RequestBuilder req =
-        new Http.RequestBuilder().uri(CONTENT_STATE_READ_URL).bodyJson(json).method("POST");
+            new Http.RequestBuilder().uri(CONTENT_STATE_READ_URL).bodyJson(json).method("POST");
     Result result = Helpers.route(application, req);
     Assert.assertEquals(400, result.status());
   }
@@ -124,7 +120,7 @@ public class LearnerControllerTest extends BaseApplicationTest {
     String data = mapToJson(requestMap);
     JsonNode json = Json.parse(data);
     Http.RequestBuilder req =
-        new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
+            new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
     Result result = Helpers.route(application, req);
     Assert.assertEquals(400, result.status());
   }
@@ -132,9 +128,9 @@ public class LearnerControllerTest extends BaseApplicationTest {
   @Test
   public void testUpdateContentStateFailureWithoutContentId() {
     JsonNode json =
-        createUpdateContentStateRequest(null, "Active", generateDatePattern(), COURSE_ID);
+            createUpdateContentStateRequest(null, "Active", generateDatePattern(), COURSE_ID);
     Http.RequestBuilder req =
-        new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
+            new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
     Result result = Helpers.route(application, req);
     Assert.assertEquals(400, result.status());
   }
@@ -142,9 +138,9 @@ public class LearnerControllerTest extends BaseApplicationTest {
   @Test
   public void testUpdateContentStateFailureWithoutStatus() {
     JsonNode json =
-        createUpdateContentStateRequest(CONTENT_ID, null, generateDatePattern(), COURSE_ID);
+            createUpdateContentStateRequest(CONTENT_ID, null, generateDatePattern(), COURSE_ID);
     Http.RequestBuilder req =
-        new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
+            new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
     Result result = Helpers.route(application, req);
     Assert.assertEquals(400, result.status());
   }
@@ -152,10 +148,10 @@ public class LearnerControllerTest extends BaseApplicationTest {
   @Test
   public void testUpdateContentStateFailureWithIncorrectDateFormat() {
     JsonNode json =
-        createUpdateContentStateRequest(
-            CONTENT_ID, "Active", "18-12-2017 10:47:30:707+0530", COURSE_ID);
+            createUpdateContentStateRequest(
+                    CONTENT_ID, "Active", "18-12-2017 10:47:30:707+0530", COURSE_ID);
     Http.RequestBuilder req =
-        new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
+            new Http.RequestBuilder().uri(CONTENT_STATE_UPDATE_URL).bodyJson(json).method("PATCH");
     Result result = Helpers.route(application, req);
     Assert.assertEquals(400, result.status());
   }
@@ -177,7 +173,7 @@ public class LearnerControllerTest extends BaseApplicationTest {
   }
 
   private JsonNode createUpdateContentStateRequest(
-      String contentId, String status, String lastUpdatedTime, String courseId) {
+          String contentId, String status, String lastUpdatedTime, String courseId) {
     Map<String, Object> requestMap = new HashMap<>();
     Map<String, Object> innerMap = new HashMap<>();
     List<Object> list = new ArrayList<>();

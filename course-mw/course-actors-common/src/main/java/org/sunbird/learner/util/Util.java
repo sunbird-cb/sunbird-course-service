@@ -46,11 +46,12 @@ public final class Util {
   /** This method will initialize the cassandra data base property */
   private static void initializeDBProperty() {
     dbInfoMap.put(
-        JsonKey.LEARNER_COURSE_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "user_enrolments"));
+            JsonKey.LEARNER_COURSE_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "user_enrolments"));
     dbInfoMap.put(
-        JsonKey.LEARNER_CONTENT_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "user_content_consumption"));
+            JsonKey.LEARNER_CONTENT_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "user_content_consumption"));
     dbInfoMap.put(
-        JsonKey.COURSE_MANAGEMENT_DB, getDbInfoObject(KEY_SPACE_NAME, "course_management"));
+            JsonKey.COURSE_MANAGEMENT_DB, getDbInfoObject(KEY_SPACE_NAME, "course_management"));
+    dbInfoMap.put(JsonKey.COURSE_USER_ENROLMENTS_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "user_enrolments"));
     dbInfoMap.put(JsonKey.PAGE_MGMT_DB, getDbInfoObject(KEY_SPACE_NAME, "page_management"));
     dbInfoMap.put(JsonKey.PAGE_SECTION_DB, getDbInfoObject(KEY_SPACE_NAME, "page_section"));
     dbInfoMap.put(JsonKey.SECTION_MGMT_DB, getDbInfoObject(KEY_SPACE_NAME, "page_section"));
@@ -58,13 +59,13 @@ public final class Util {
     dbInfoMap.put(JsonKey.ASSESSMENT_ITEM_DB, getDbInfoObject(KEY_SPACE_NAME, "assessment_item"));
 
     dbInfoMap.put(
-        JsonKey.BULK_OP_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "bulk_upload_process"));
+            JsonKey.BULK_OP_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "bulk_upload_process"));
     dbInfoMap.put(JsonKey.COURSE_BATCH_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "course_batch"));
     dbInfoMap.put(JsonKey.CLIENT_INFO_DB, getDbInfoObject(KEY_SPACE_NAME, "client_info"));
     dbInfoMap.put(JsonKey.USER_AUTH_DB, getDbInfoObject(KEY_SPACE_NAME, "user_auth"));
     dbInfoMap.put(
-        JsonKey.SUNBIRD_COURSE_DIALCODES_DB,
-        getDbInfoObject(DIALCODE_KEY_SPACE_NAME, "dialcode_images"));
+            JsonKey.SUNBIRD_COURSE_DIALCODES_DB,
+            getDbInfoObject(DIALCODE_KEY_SPACE_NAME, "dialcode_images"));
     dbInfoMap.put(
             JsonKey.GROUP_ACTIVITY_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "user_activity_agg"));
     dbInfoMap.put(
@@ -160,12 +161,12 @@ public final class Util {
      * @param password
      */
     DbInfo(
-        String keySpace,
-        String tableName,
-        String userName,
-        String password,
-        String ip,
-        String port) {
+            String keySpace,
+            String tableName,
+            String userName,
+            String password,
+            String ip,
+            String port) {
       this.keySpace = keySpace;
       this.tableName = tableName;
       this.userName = userName;
@@ -182,8 +183,8 @@ public final class Util {
       if (obj instanceof DbInfo) {
         DbInfo ob = (DbInfo) obj;
         if (this.ip.equals(ob.getIp())
-            && this.port.equals(ob.getPort())
-            && this.keySpace.equals(ob.getKeySpace())) {
+                && this.port.equals(ob.getPort())
+                && this.keySpace.equals(ob.getKeySpace())) {
           return true;
         }
       }
@@ -273,13 +274,13 @@ public final class Util {
     }
     if (searchQueryMap.containsKey(JsonKey.NOT_EXISTS)) {
       search
-          .getAdditionalProperties()
-          .put(JsonKey.NOT_EXISTS, searchQueryMap.get(JsonKey.NOT_EXISTS));
+              .getAdditionalProperties()
+              .put(JsonKey.NOT_EXISTS, searchQueryMap.get(JsonKey.NOT_EXISTS));
     }
     if (searchQueryMap.containsKey(JsonKey.SORT_BY)) {
       search
-          .getSortBy()
-          .putAll((Map<? extends String, ? extends String>) searchQueryMap.get(JsonKey.SORT_BY));
+              .getSortBy()
+              .putAll((Map<? extends String, ? extends String>) searchQueryMap.get(JsonKey.SORT_BY));
     }
     if (searchQueryMap.containsKey(JsonKey.OFFSET)) {
       if ((searchQueryMap.get(JsonKey.OFFSET)) instanceof Integer) {
@@ -303,16 +304,16 @@ public final class Util {
     }
     if (searchQueryMap.containsKey(JsonKey.GROUP_QUERY)) {
       search
-          .getGroupQuery()
-          .addAll(
-              (Collection<? extends Map<String, Object>>) searchQueryMap.get(JsonKey.GROUP_QUERY));
+              .getGroupQuery()
+              .addAll(
+                      (Collection<? extends Map<String, Object>>) searchQueryMap.get(JsonKey.GROUP_QUERY));
     }
     if (searchQueryMap.containsKey(JsonKey.SOFT_CONSTRAINTS)) {
       // Play is converting int value to bigInt so need to cnvert back those data to iny
       // SearchDto soft constraints expect Map<String, Integer>
       Map<String, Integer> constraintsMap = new HashMap<>();
       Set<Entry<String, BigInteger>> entrySet =
-          ((Map<String, BigInteger>) searchQueryMap.get(JsonKey.SOFT_CONSTRAINTS)).entrySet();
+              ((Map<String, BigInteger>) searchQueryMap.get(JsonKey.SOFT_CONSTRAINTS)).entrySet();
       Iterator<Entry<String, BigInteger>> itr = entrySet.iterator();
       while (itr.hasNext()) {
         Entry<String, BigInteger> entry = itr.next();
@@ -343,12 +344,12 @@ public final class Util {
     return null != obj ? true : false;
   }
 
-  public static void initializeContext(Request actorMessage, String env, String log_env) {
+  public static void initializeContext(Request actorMessage, String env) {
     Map<String, Object> requestContext = null;
     if ((actorMessage.getContext().get(JsonKey.TELEMETRY_CONTEXT) != null)) {
       // means request context is already set by some other actor ...
       requestContext =
-          (Map<String, Object>) actorMessage.getContext().get(JsonKey.TELEMETRY_CONTEXT);
+              (Map<String, Object>) actorMessage.getContext().get(JsonKey.TELEMETRY_CONTEXT);
     } else {
       requestContext = new HashMap<>();
       // request level info ...
@@ -370,19 +371,15 @@ public final class Util {
       requestContext.put(JsonKey.DEVICE_ID, deviceId);
       requestContext.put(JsonKey.X_AUTH_TOKEN, getKeyFromContext(JsonKey.X_AUTH_TOKEN, actorMessage));
 
-        actorMessage.getContext().putAll(requestContext);
-      if (actorMessage.getRequestContext() != null)
-        actorMessage.getRequestContext().setEnv(log_env);
-
+      actorMessage.getContext().putAll(requestContext);
       // and global context will be set at the time of creation of thread local
       // automatically ...
     }
   }
-
   public static String getKeyFromContext(String key, Request actorMessage) {
     return actorMessage.getContext() != null && actorMessage.getContext().containsKey(key)
-        ? (String) actorMessage.getContext().get(key)
-        : "";
+            ? (String) actorMessage.getContext().get(key)
+            : "";
   }
 
 }

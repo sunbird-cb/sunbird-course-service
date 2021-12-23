@@ -24,15 +24,15 @@ import org.sunbird.common.responsecode.ResponseCode;
 
 public class CassandraDACImpl extends CassandraOperationImpl {
 
-    @Override
+  @Override
   public Response getRecords(
-            RequestContext requestContext, String keySpace, String table, Map<String, Object> filters, List<String> fields) {
+          RequestContext requestContext, String keySpace, String table, Map<String, Object> filters, List<String> fields) {
     Response response = new Response();
     Session session = connectionManager.getSession(keySpace);
     try {
       Select select;
       if (CollectionUtils.isNotEmpty(fields)) {
-        select = QueryBuilder.select((String[]) fields.toArray()).from(keySpace, table);
+        select = QueryBuilder.select(fields.toArray()).from(keySpace, table);
       } else {
         select = QueryBuilder.select().all().from(keySpace, table);
       }
@@ -56,9 +56,9 @@ public class CassandraDACImpl extends CassandraOperationImpl {
     } catch (Exception e) {
       logger.error(requestContext,Constants.EXCEPTION_MSG_FETCH + table + " : " + e.getMessage(), e);
       throw new ProjectCommonException(
-          ResponseCode.SERVER_ERROR.getErrorCode(),
-          ResponseCode.SERVER_ERROR.getErrorMessage(),
-          ResponseCode.SERVER_ERROR.getResponseCode());
+              ResponseCode.SERVER_ERROR.getErrorCode(),
+              ResponseCode.SERVER_ERROR.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
     }
     return response;
   }
@@ -95,9 +95,9 @@ public class CassandraDACImpl extends CassandraOperationImpl {
     } catch (Exception e) {
       logger.error(requestContext,Constants.EXCEPTION_MSG_FETCH + table + " : " + e.getMessage(), e);
       throw new ProjectCommonException(
-          ResponseCode.SERVER_ERROR.getErrorCode(),
-          ResponseCode.SERVER_ERROR.getErrorMessage(),
-          ResponseCode.SERVER_ERROR.getResponseCode());
+              ResponseCode.SERVER_ERROR.getErrorCode(),
+              ResponseCode.SERVER_ERROR.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
     }
   }
 
@@ -131,12 +131,12 @@ public class CassandraDACImpl extends CassandraOperationImpl {
       update.with(QueryBuilder.remove(column, key));
     }
     if (MapUtils.isEmpty(primaryKey)) {
-      logger.error(requestContext, 
-          Constants.EXCEPTION_MSG_FETCH + table + " : primary key is a must for update call", null);
+      logger.error(requestContext,
+              Constants.EXCEPTION_MSG_FETCH + table + " : primary key is a must for update call", null);
       throw new ProjectCommonException(
-          ResponseCode.SERVER_ERROR.getErrorCode(),
-          ResponseCode.SERVER_ERROR.getErrorMessage(),
-          ResponseCode.SERVER_ERROR.getResponseCode());
+              ResponseCode.SERVER_ERROR.getErrorCode(),
+              ResponseCode.SERVER_ERROR.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
     }
     Update.Where where = update.where();
     for (Map.Entry<String, Object> filter : primaryKey.entrySet()) {
@@ -158,9 +158,9 @@ public class CassandraDACImpl extends CassandraOperationImpl {
       e.printStackTrace();
       logger.error(null,Constants.EXCEPTION_MSG_FETCH + table + " : " + e.getMessage(), e);
       throw new ProjectCommonException(
-          ResponseCode.SERVER_ERROR.getErrorCode(),
-          ResponseCode.SERVER_ERROR.getErrorMessage(),
-          ResponseCode.SERVER_ERROR.getResponseCode());
+              ResponseCode.SERVER_ERROR.getErrorCode(),
+              ResponseCode.SERVER_ERROR.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
     }
   }
 

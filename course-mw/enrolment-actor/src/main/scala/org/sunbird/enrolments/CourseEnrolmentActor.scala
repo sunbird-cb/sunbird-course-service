@@ -1,31 +1,32 @@
 package org.sunbird.enrolments
 
 import java.sql.Timestamp
-import java.text.{MessageFormat, SimpleDateFormat}
+import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util
 import java.util.Date
 
 import akka.actor.ActorRef
 import com.fasterxml.jackson.databind.ObjectMapper
 import javax.inject.{Inject, Named}
-import org.apache.commons.collections4.{CollectionUtils, MapUtils}
+import org.apache.commons.collections4.CollectionUtils
 import org.apache.commons.lang3.StringUtils
+import org.sunbird.cache.util.RedisCacheUtil
+import org.sunbird.learner.actors.coursebatch.service.UserCoursesService
+import org.sunbird.common.CassandraUtil
 import org.sunbird.common.exception.ProjectCommonException
 import org.sunbird.common.models.response.Response
-import org.sunbird.common.models.util.ProjectUtil.EnrolmentType
+import org.sunbird.common.models.util.ProjectUtil.{EnrolmentType, ProgressStatus}
 import org.sunbird.common.models.util._
 import org.sunbird.common.request.{Request, RequestContext}
 import org.sunbird.common.responsecode.ResponseCode
 import org.sunbird.learner.actors.coursebatch.dao.impl.{CourseBatchDaoImpl, UserCoursesDaoImpl}
 import org.sunbird.learner.actors.coursebatch.dao.{CourseBatchDao, UserCoursesDao}
 import org.sunbird.learner.actors.group.dao.impl.GroupDaoImpl
-import org.sunbird.learner.util.{ContentSearchUtil, ContentUtil, CourseBatchSchedulerUtil, JsonUtil, Util}
+import org.sunbird.learner.util._
 import org.sunbird.models.course.batch.CourseBatch
 import org.sunbird.models.user.courses.UserCourses
-import org.sunbird.cache.util.RedisCacheUtil
-import org.sunbird.common.CassandraUtil
 import org.sunbird.telemetry.util.TelemetryUtil
 
 import scala.collection.JavaConversions._
@@ -40,11 +41,15 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
      */
     var courseBatchDao: CourseBatchDao = new CourseBatchDaoImpl()
     var userCoursesDao: UserCoursesDao = new UserCoursesDaoImpl()
+    val userCoursesService = new UserCoursesService
     var groupDao: GroupDaoImpl = new GroupDaoImpl()
     val isCacheEnabled = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")))
         (ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")).toBoolean else true
     val ttl: Int = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_ttl")))
         (ProjectUtil.getConfigValue("user_enrolments_response_cache_ttl")).toInt else 60
+
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
     private val DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd")
 
 
@@ -62,12 +67,13 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
 
     override def onReceive(request: Request): Unit = {
-        Util.initializeContext(request, TelemetryEnvKey.BATCH, this.getClass.getName)
+        Util.initializeContext(request, TelemetryEnvKey.BATCH)
 
         request.getOperation match {
             case "enrol" => enroll(request)
             case "unenrol" => unEnroll(request)
             case "listEnrol" => list(request)
+            case "getParticipantsForFixedBatch" => fetchParticipantsForFixedBatch(request)
             case _ => ProjectCommonException.throwClientErrorException(ResponseCode.invalidRequestData,
                 ResponseCode.invalidRequestData.getErrorMessage)
         }
@@ -77,6 +83,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val courseId: String = request.get(JsonKey.COURSE_ID).asInstanceOf[String]
         val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
         val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
+        val isFixedBatch: Boolean = request.getRequest.containsKey(JsonKey.FIXED_BATCH_ID)
         val batchData: CourseBatch = courseBatchDao.readById( courseId, batchId, request.getRequestContext)
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
         validateEnrolment(batchData, enrolmentData, true)
@@ -88,12 +95,13 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         generateTelemetryAudit(userId, courseId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
         notifyUser(userId, batchData, JsonKey.ADD)
     }
-    
-    
+
+
     def unEnroll(request:Request): Unit = {
         val courseId: String = request.get(JsonKey.COURSE_ID).asInstanceOf[String]
         val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
         val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
+        val isFixedBatch: Boolean = request.getRequest.containsKey(JsonKey.FIXED_BATCH_ID)
         val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
         getUpdatedStatus(enrolmentData)
@@ -105,6 +113,21 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         sender().tell(successResponse(), self)
         generateTelemetryAudit(userId, courseId, batchId, data, "unenrol", JsonKey.UPDATE, request.getContext)
         notifyUser(userId, batchData, JsonKey.REMOVE)
+    }
+
+    def fetchParticipantsForFixedBatch(request: Request): Unit = {
+        val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
+        val isFixedBatch: Boolean = request.getRequest.containsKey(JsonKey.FIXED_BATCH_ID)
+        if (!isFixedBatch)
+            ProjectCommonException.throwClientErrorException(ResponseCode.missingFixedBatchId, ResponseCode.missingFixedBatchId.getErrorMessage)
+        var users: util.List[String] = userCoursesService.getParticipantsList(batchId, true, request.getRequestContext)
+        if (users == null) users = new util.ArrayList()
+        val response: Response = new Response
+        val result = new util.HashMap[String, Object]
+        result.put(JsonKey.COUNT, users.size.asInstanceOf[Integer])
+        result.put(JsonKey.PARTICIPANTS, users)
+        response.put(JsonKey.PARTICIPANTS, result)
+        sender.tell(response, self)
     }
 
     def list(request: Request): Unit = {
@@ -130,9 +153,9 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val coursesMap = {
             if(CollectionUtils.isNotEmpty(coursesList)) {
                 coursesList.map(ev => ev.get(JsonKey.IDENTIFIER).asInstanceOf[String] -> ev).toMap
-            } else Map()
+            } else courseIds.map(c => c -> new util.HashMap[String, AnyRef]()).toMap
         }
-        
+
         activeEnrolments.filter(enrolment => coursesMap.containsKey(enrolment.get(JsonKey.COURSE_ID))).map(enrolment => {
             val courseContent = coursesMap.get(enrolment.get(JsonKey.COURSE_ID))
             enrolment.put(JsonKey.COURSE_NAME, courseContent.get(JsonKey.NAME))
@@ -150,7 +173,6 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val filters: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {{
             put(JsonKey.IDENTIFIER, courseIds)
             put(JsonKey.STATUS, "Live")
-            put(JsonKey.MIME_TYPE, JsonKey.COLLECTION_MIME_TYPE)
             put(JsonKey.TRACKABLE_ENABLED, JsonKey.YES)
             putAll(request.getRequest.getOrDefault(JsonKey.FILTERS, new java.util.HashMap[String, AnyRef]).asInstanceOf[java.util.Map[String, AnyRef]])
         }}
@@ -184,29 +206,30 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     def searchBatchDetails(batchIds: java.util.List[String], request: Request): java.util.List[java.util.Map[String, AnyRef]] = {
         val requestedFields: java.util.List[String] = if(null != request.getContext.get(JsonKey.BATCH_DETAILS).asInstanceOf[Array[String]]) request.getContext.get(JsonKey.BATCH_DETAILS).asInstanceOf[Array[String]](0).split(",").toList.asJava else new java.util.ArrayList[String]()
         if(CollectionUtils.isNotEmpty(requestedFields)) {
-          val fields = new java.util.ArrayList[String]()
+            val fields = new java.util.ArrayList[String]()
             fields.addAll(requestedFields)
             fields.add(JsonKey.BATCH_ID)
             fields.add(JsonKey.IDENTIFIER)
-          getBatches(request.getRequestContext ,new java.util.ArrayList[String](batchIds), fields)
+            getBatches(request.getRequestContext ,new java.util.ArrayList[String](batchIds), fields)
         } else {
             new java.util.ArrayList[util.Map[String, AnyRef]]()
         }
     }
-    
-    
+
+
     def validateEnrolment(batchData: CourseBatch, enrolmentData: UserCourses, isEnrol: Boolean): Unit = {
         if(null == batchData) ProjectCommonException.throwClientErrorException(ResponseCode.invalidCourseBatchId, ResponseCode.invalidCourseBatchId.getErrorMessage)
-        
-        if(EnrolmentType.inviteOnly.getVal.equalsIgnoreCase(batchData.getEnrollmentType))
+
+        if(!(EnrolmentType.inviteOnly.getVal.equalsIgnoreCase(batchData.getEnrollmentType) ||
+          EnrolmentType.open.getVal.equalsIgnoreCase(batchData.getEnrollmentType)))
             ProjectCommonException.throwClientErrorException(ResponseCode.enrollmentTypeValidation, ResponseCode.enrollmentTypeValidation.getErrorMessage)
-        
-        if((2 == batchData.getStatus) || (null != batchData.getEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atTime(LocalTime.MAX))))
+
+        if((2 == batchData.getStatus) || (null != batchData.getEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEndDate), dateTimeFormatter).atTime(LocalTime.MAX))))
             ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
-        
-        if(isEnrol && null != batchData.getEnrollmentEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEnrollmentEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atTime(LocalTime.MAX)))
+
+        if(isEnrol && null != batchData.getEnrollmentEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEnrollmentEndDate), dateTimeFormatter).atTime(LocalTime.MAX)))
             ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchEnrollmentDateEnded, ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage)
-        
+
         if(isEnrol && null != enrolmentData && enrolmentData.isActive) ProjectCommonException.throwClientErrorException(ResponseCode.userAlreadyEnrolledCourse, ResponseCode.userAlreadyEnrolledCourse.getErrorMessage)
         if(!isEnrol && (null == enrolmentData || !enrolmentData.isActive)) ProjectCommonException.throwClientErrorException(ResponseCode.userNotEnrolledCourse, ResponseCode.userNotEnrolledCourse.getErrorMessage)
         if(!isEnrol && ProjectUtil.ProgressStatus.COMPLETED.getValue == enrolmentData.getStatus) ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
@@ -221,7 +244,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         }
     }
 
-    def createUserEnrolmentMap(userId: String, courseId: String, batchId: String, enrolmentData: UserCourses, requestedBy: String): java.util.Map[String, AnyRef] = 
+    def createUserEnrolmentMap(userId: String, courseId: String, batchId: String, enrolmentData: UserCourses, requestedBy: String): java.util.Map[String, AnyRef] =
         new java.util.HashMap[String, AnyRef]() {{
             put(JsonKey.USER_ID, userId)
             put(JsonKey.COURSE_ID, courseId)
@@ -307,7 +330,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val activeEnrolments: java.util.List[java.util.Map[String, AnyRef]] = getActiveEnrollments( userId, request.getRequestContext)
         val enrolments: java.util.List[java.util.Map[String, AnyRef]] = {
             if (CollectionUtils.isNotEmpty(activeEnrolments)) {
-              val courseIds: java.util.List[String] = activeEnrolments.map(e => e.getOrDefault(JsonKey.COURSE_ID, "").asInstanceOf[String]).distinct.filter(id => StringUtils.isNotBlank(id)).toList.asJava
+                val courseIds: java.util.List[String] = activeEnrolments.map(e => e.getOrDefault(JsonKey.COURSE_ID, "").asInstanceOf[String]).distinct.filter(id => StringUtils.isNotBlank(id)).toList.asJava
                 val enrolmentList: java.util.List[java.util.Map[String, AnyRef]] = addCourseDetails(activeEnrolments, courseIds, request)
                 val updatedEnrolmentList = updateProgressData(enrolmentList, userId, courseIds, request.getRequestContext)
                 addBatchDetails(updatedEnrolmentList, request)
@@ -335,6 +358,21 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         } else 0}
         enrolmentData.setStatus(getCompletionStatus(enrolmentData.getProgress, leafNodesCount))
     }
-}
 
+    private def getBatch(requestContext: RequestContext, courseId: String, batchId: String, isFixedBatch: Boolean) = {
+        if (isFixedBatch) getFixedBatch(batchId, courseId) else courseBatchDao.readById(courseId, batchId, requestContext)
+    }
+
+    //Following default batch allows anyone to join and at any time. TODO: this likely needs a KP lookup to determine enrollment type
+    private def getFixedBatch(batchId: String, courseId: String): CourseBatch = {
+        val batch = new CourseBatch
+        batch.setBatchId(batchId)
+        batch.setCourseId(courseId)
+        batch.setEnrollmentType(EnrolmentType.open.name())
+        batch.setStatus(ProgressStatus.NOT_STARTED.getValue)
+        batch.setEnrollmentEndDate(DATE_FORMAT.parse(LocalDate.now().plusDays(2).format(dateTimeFormatter)))
+        batch
+    }
+
+}
 

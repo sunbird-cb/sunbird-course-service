@@ -32,7 +32,7 @@ import org.sunbird.common.responsecode.ResponseCode;
 public final class CassandraUtil {
 
   private static final CassandraPropertyReader propertiesCache =
-      CassandraPropertyReader.getInstance();
+          CassandraPropertyReader.getInstance();
   private static final String SERIAL_VERSION_UID = "serialVersionUID";
   protected static LoggerUtil logger = new LoggerUtil(CassandraUtil.class);
 
@@ -47,10 +47,10 @@ public final class CassandraUtil {
    * @return Prepared statement
    */
   public static String getPreparedStatement(
-      String keyspaceName, String tableName, Map<String, Object> map) {
+          String keyspaceName, String tableName, Map<String, Object> map) {
     StringBuilder query = new StringBuilder();
     query.append(
-        Constants.INSERT_INTO + keyspaceName + Constants.DOT + tableName + Constants.OPEN_BRACE);
+            Constants.INSERT_INTO + keyspaceName + Constants.DOT + tableName + Constants.OPEN_BRACE);
     Set<String> keySet = map.keySet();
     query.append(String.join(",", keySet) + Constants.VALUES_WITH_BRACE);
     StringBuilder commaSepValueBuilder = new StringBuilder();
@@ -77,27 +77,27 @@ public final class CassandraUtil {
     Map<String, String> columnsMapping = fetchColumnsMapping(results);
     Iterator<Row> rowIterator = results.iterator();
     rowIterator.forEachRemaining(
-        row -> {
-          Map<String, Object> rowMap = new HashMap<>();
-          columnsMapping
-              .entrySet()
-              .stream()
-              .forEach(entry -> rowMap.put(entry.getKey(), row.getObject(entry.getValue())));
-          responseList.add(rowMap);
-        });
-    logger.info(null, "Total rows fetched from cassandra: " + responseList.size());
+            row -> {
+              Map<String, Object> rowMap = new HashMap<>();
+              columnsMapping
+                      .entrySet()
+                      .stream()
+                      .forEach(entry -> rowMap.put(entry.getKey(), row.getObject(entry.getValue())));
+              responseList.add(rowMap);
+            });
+    logger.info(null, responseList.toString());
     response.put(Constants.RESPONSE, responseList);
     return response;
   }
 
   public static Map<String, String> fetchColumnsMapping(ResultSet results) {
     return results
-        .getColumnDefinitions()
-        .asList()
-        .stream()
-        .collect(
-            Collectors.toMap(
-                d -> propertiesCache.readProperty(d.getName()).trim(), d -> d.getName()));
+            .getColumnDefinitions()
+            .asList()
+            .stream()
+            .collect(
+                    Collectors.toMap(
+                            d -> propertiesCache.readProperty(d.getName()).trim(), d -> d.getName()));
   }
 
   /**
@@ -109,15 +109,15 @@ public final class CassandraUtil {
    * @return String String
    */
   public static String getUpdateQueryStatement(
-      String keyspaceName, String tableName, Map<String, Object> map) {
+          String keyspaceName, String tableName, Map<String, Object> map) {
     StringBuilder query =
-        new StringBuilder(
-            Constants.UPDATE + keyspaceName + Constants.DOT + tableName + Constants.SET);
+            new StringBuilder(
+                    Constants.UPDATE + keyspaceName + Constants.DOT + tableName + Constants.SET);
     Set<String> key = new HashSet<>(map.keySet());
     key.remove(Constants.IDENTIFIER);
     query.append(String.join(" = ? ,", key));
     query.append(
-        Constants.EQUAL_WITH_QUE_MARK + Constants.WHERE_ID + Constants.EQUAL_WITH_QUE_MARK);
+            Constants.EQUAL_WITH_QUE_MARK + Constants.WHERE_ID + Constants.EQUAL_WITH_QUE_MARK);
     return query.toString();
   }
 
@@ -130,18 +130,18 @@ public final class CassandraUtil {
    * @return String String
    */
   public static String getSelectStatement(
-      String keyspaceName, String tableName, String... properties) {
+          String keyspaceName, String tableName, String... properties) {
     StringBuilder query = new StringBuilder(Constants.SELECT);
     query.append(String.join(",", properties));
     query.append(
-        Constants.FROM
-            + keyspaceName
-            + Constants.DOT
-            + tableName
-            + Constants.WHERE
-            + Constants.IDENTIFIER
-            + Constants.EQUAL
-            + " ?; ");
+            Constants.FROM
+                    + keyspaceName
+                    + Constants.DOT
+                    + tableName
+                    + Constants.WHERE
+                    + Constants.IDENTIFIER
+                    + Constants.EQUAL
+                    + " ?; ");
     logger.info(null, query.toString());
     return query.toString();
   }
@@ -149,11 +149,11 @@ public final class CassandraUtil {
   public static String processExceptionForUnknownIdentifier(Exception e) {
     // Unknown identifier
     return ProjectUtil.formatMessage(
-            ResponseCode.invalidPropertyError.getErrorMessage(),
-            e.getMessage()
-                .replace(JsonKey.UNKNOWN_IDENTIFIER, "")
-                .replace(JsonKey.UNDEFINED_IDENTIFIER, ""))
-        .trim();
+                    ResponseCode.invalidPropertyError.getErrorMessage(),
+                    e.getMessage()
+                            .replace(JsonKey.UNKNOWN_IDENTIFIER, "")
+                            .replace(JsonKey.UNDEFINED_IDENTIFIER, ""))
+            .trim();
   }
 
   /**
@@ -198,9 +198,9 @@ public final class CassandraUtil {
     } catch (Exception ex) {
       logger.error(null,"Exception occurred - batchUpdateQuery", ex);
       throw new ProjectCommonException(
-          ResponseCode.SERVER_ERROR.getErrorCode(),
-          ResponseCode.SERVER_ERROR.getErrorMessage(),
-          ResponseCode.SERVER_ERROR.getResponseCode());
+              ResponseCode.SERVER_ERROR.getErrorCode(),
+              ResponseCode.SERVER_ERROR.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
     }
     Map<String, Map<String, Object>> map = new HashMap<>();
     map.put(JsonKey.PRIMARY_KEY, primaryKeyMap);
@@ -245,9 +245,9 @@ public final class CassandraUtil {
     } catch (Exception ex) {
       logger.error(null, "Exception occurred - getPrimaryKey", ex);
       throw new ProjectCommonException(
-          ResponseCode.SERVER_ERROR.getErrorCode(),
-          ResponseCode.SERVER_ERROR.getErrorMessage(),
-          ResponseCode.SERVER_ERROR.getResponseCode());
+              ResponseCode.SERVER_ERROR.getErrorCode(),
+              ResponseCode.SERVER_ERROR.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
     }
     return primaryKeyMap;
   }
@@ -263,19 +263,19 @@ public final class CassandraUtil {
     if (value instanceof Map) {
       Map<String, Object> map = (Map<String, Object>) value;
       map.entrySet()
-          .stream()
-          .forEach(
-              x -> {
-                if (Constants.LTE.equalsIgnoreCase(x.getKey())) {
-                  where.and(QueryBuilder.lte(key, x.getValue()));
-                } else if (Constants.LT.equalsIgnoreCase(x.getKey())) {
-                  where.and(QueryBuilder.lt(key, x.getValue()));
-                } else if (Constants.GTE.equalsIgnoreCase(x.getKey())) {
-                  where.and(QueryBuilder.gte(key, x.getValue()));
-                } else if (Constants.GT.equalsIgnoreCase(x.getKey())) {
-                  where.and(QueryBuilder.gt(key, x.getValue()));
-                }
-              });
+              .stream()
+              .forEach(
+                      x -> {
+                        if (Constants.LTE.equalsIgnoreCase(x.getKey())) {
+                          where.and(QueryBuilder.lte(key, x.getValue()));
+                        } else if (Constants.LT.equalsIgnoreCase(x.getKey())) {
+                          where.and(QueryBuilder.lt(key, x.getValue()));
+                        } else if (Constants.GTE.equalsIgnoreCase(x.getKey())) {
+                          where.and(QueryBuilder.gte(key, x.getValue()));
+                        } else if (Constants.GT.equalsIgnoreCase(x.getKey())) {
+                          where.and(QueryBuilder.gt(key, x.getValue()));
+                        }
+                      });
     } else if (value instanceof List) {
       where.and(QueryBuilder.in(key, (List) value));
     } else {
@@ -293,28 +293,28 @@ public final class CassandraUtil {
    * @return RegularStatement.
    */
   public static RegularStatement createUpdateQuery(
-      Map<String, Object> primaryKey,
-      Map<String, Object> nonPKRecord,
-      String keyspaceName,
-      String tableName) {
+          Map<String, Object> primaryKey,
+          Map<String, Object> nonPKRecord,
+          String keyspaceName,
+          String tableName) {
 
     Update update = QueryBuilder.update(keyspaceName, tableName);
     Assignments assignments = update.with();
     Update.Where where = update.where();
     nonPKRecord
-        .entrySet()
-        .stream()
-        .forEach(
-            x -> {
-              assignments.and(QueryBuilder.set(x.getKey(), x.getValue()));
-            });
+            .entrySet()
+            .stream()
+            .forEach(
+                    x -> {
+                      assignments.and(QueryBuilder.set(x.getKey(), x.getValue()));
+                    });
     primaryKey
-        .entrySet()
-        .stream()
-        .forEach(
-            x -> {
-              where.and(QueryBuilder.eq(x.getKey(), x.getValue()));
-            });
+            .entrySet()
+            .stream()
+            .forEach(
+                    x -> {
+                      where.and(QueryBuilder.eq(x.getKey(), x.getValue()));
+                    });
     return where;
   }
 
@@ -322,19 +322,19 @@ public final class CassandraUtil {
     if (value instanceof Map) {
       Map<String, Object> map = (Map<String, Object>) value;
       map.entrySet()
-          .stream()
-          .forEach(
-              x -> {
-                if (Constants.LTE.equalsIgnoreCase(x.getKey())) {
-                  where.and(QueryBuilder.lte(key, x.getValue()));
-                } else if (Constants.LT.equalsIgnoreCase(x.getKey())) {
-                  where.and(QueryBuilder.lt(key, x.getValue()));
-                } else if (Constants.GTE.equalsIgnoreCase(x.getKey())) {
-                  where.and(QueryBuilder.gte(key, x.getValue()));
-                } else if (Constants.GT.equalsIgnoreCase(x.getKey())) {
-                  where.and(QueryBuilder.gt(key, x.getValue()));
-                }
-              });
+              .stream()
+              .forEach(
+                      x -> {
+                        if (Constants.LTE.equalsIgnoreCase(x.getKey())) {
+                          where.and(QueryBuilder.lte(key, x.getValue()));
+                        } else if (Constants.LT.equalsIgnoreCase(x.getKey())) {
+                          where.and(QueryBuilder.lt(key, x.getValue()));
+                        } else if (Constants.GTE.equalsIgnoreCase(x.getKey())) {
+                          where.and(QueryBuilder.gte(key, x.getValue()));
+                        } else if (Constants.GT.equalsIgnoreCase(x.getKey())) {
+                          where.and(QueryBuilder.gt(key, x.getValue()));
+                        }
+                      });
     } else if (value instanceof List) {
       where.and(QueryBuilder.in(key, (List) value));
     } else {

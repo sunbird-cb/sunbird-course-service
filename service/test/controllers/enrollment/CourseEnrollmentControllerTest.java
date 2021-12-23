@@ -1,4 +1,4 @@
-package controllers.courseenrollment;
+package controllers.enrollment;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import controllers.BaseApplicationTest;
@@ -7,8 +7,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.sunbird.common.models.util.JsonKey;
@@ -17,8 +15,6 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.test.Helpers;
 import util.ACTOR_NAMES;
-import util.Attrs;
-import util.RequestInterceptor;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -93,14 +89,13 @@ public class CourseEnrollmentControllerTest extends BaseApplicationTest {
 
   @Test
   public void testEnrollCourseBatchFailureWithoutUserId() {
-    PowerMockito.when(RequestInterceptor.verifyRequestData(Mockito.any())).thenReturn(JsonKey.ANONYMOUS);
     Http.RequestBuilder req =
             new Http.RequestBuilder()
                     .uri(ENROLL_BATCH_URL)
                     .bodyJson(createCourseEnrollmentRequest(COURSE_ID, BATCH_ID, null))
                     .method("POST");
     Result result = Helpers.route(application, req);
-    Assert.assertEquals( 401, result.status());
+    Assert.assertEquals( 400, result.status());
   }
 
   @Test
@@ -127,20 +122,19 @@ public class CourseEnrollmentControllerTest extends BaseApplicationTest {
 
   @Test
   public void testUnenrollCourseBatchFailureWithoutUserId() {
-    PowerMockito.when(RequestInterceptor.verifyRequestData(Mockito.any())).thenReturn(JsonKey.ANONYMOUS);
     Http.RequestBuilder req =
             new Http.RequestBuilder()
                     .uri(UENROLL_BATCH_URL)
                     .bodyJson(createCourseEnrollmentRequest(COURSE_ID, BATCH_ID, null))
                     .method("POST");
     Result result = Helpers.route(application, req);
-    Assert.assertEquals( 401, result.status());
+    Assert.assertEquals( 400, result.status());
   }
 
   @Test
   public void testGetEnrolledCoursesSuccess() {
     Http.RequestBuilder req =
-            new Http.RequestBuilder().attr(Attrs.USER_ID, USER_ID)
+            new Http.RequestBuilder()
                     .uri(GET_ENROLLED_COURSES_URL)
                     .method("GET");
     Result result = Helpers.route(application, req);
@@ -161,7 +155,7 @@ public class CourseEnrollmentControllerTest extends BaseApplicationTest {
   @Test
   public void testGetUserEnrolledCoursesWithCache() {
     Http.RequestBuilder req =
-            new Http.RequestBuilder().attr(Attrs.USER_ID, USER_ID)
+            new Http.RequestBuilder()
                     .uri(GET_ENROLLED_COURSE_URL_CACHE)
                     .method("GET");
     Result result = Helpers.route(application, req);

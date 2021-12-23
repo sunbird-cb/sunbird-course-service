@@ -53,18 +53,18 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
 
   @Override
   public void onReceive(Request request) throws Throwable {
-    Util.initializeContext(request, TelemetryEnvKey.USER, this.getClass().getName());
+    Util.initializeContext(request, TelemetryEnvKey.USER);
 
     // set request id fto thread local...
     if (request.getOperation().equalsIgnoreCase(ActorOperations.BULK_UPLOAD.getValue())) {
       upload(request);
     } else if (request
-        .getOperation()
-        .equalsIgnoreCase(ActorOperations.GET_BULK_OP_STATUS.getValue())) {
+            .getOperation()
+            .equalsIgnoreCase(ActorOperations.GET_BULK_OP_STATUS.getValue())) {
       getUploadStatus(request);
     } else if (request
-        .getOperation()
-        .equalsIgnoreCase(ActorOperations.GET_BULK_UPLOAD_STATUS_DOWNLOAD_LINK.getValue())) {
+            .getOperation()
+            .equalsIgnoreCase(ActorOperations.GET_BULK_UPLOAD_STATUS_DOWNLOAD_LINK.getValue())) {
       getBulkUploadDownloadStatusLink(request);
 
     } else {
@@ -82,13 +82,13 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
         StorageDetails cloudStorageData = bulkUploadProcess.getDecryptedStorageDetails();
         if (cloudStorageData == null) {
           ProjectCommonException.throwClientErrorException(
-              ResponseCode.errorUnavailableDownloadLink, null);
+                  ResponseCode.errorUnavailableDownloadLink, null);
         }
         String signedUrl =
-            CloudStorageUtil.getSignedUrl(
-                CloudStorageType.getByName(cloudStorageData.getStorageType()),
-                cloudStorageData.getContainer(),
-                cloudStorageData.getFileName());
+                CloudStorageUtil.getSignedUrl(
+                        CloudStorageType.getByName(cloudStorageData.getStorageType()),
+                        cloudStorageData.getContainer(),
+                        cloudStorageData.getFileName());
         Response response = new Response();
         response.setResponseCode(ResponseCode.OK);
         Map<String, Object> resultMap = response.getResult();
@@ -100,7 +100,7 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
         sender().tell(response, self());
       } catch (IOException e) {
         ProjectCommonException.throwClientErrorException(
-            ResponseCode.errorGenerateDownloadLink, null);
+                ResponseCode.errorGenerateDownloadLink, null);
       }
     } else {
       ProjectCommonException.throwResourceNotFoundException();
@@ -111,18 +111,18 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
     String processId = (String) actorMessage.getRequest().get(JsonKey.PROCESS_ID);
     Response response = null;
     List<String> fields =
-        Arrays.asList(
-            JsonKey.ID,
-            JsonKey.STATUS,
-            JsonKey.OBJECT_TYPE,
-            JsonKey.SUCCESS_RESULT,
-            JsonKey.FAILURE_RESULT);
+            Arrays.asList(
+                    JsonKey.ID,
+                    JsonKey.STATUS,
+                    JsonKey.OBJECT_TYPE,
+                    JsonKey.SUCCESS_RESULT,
+                    JsonKey.FAILURE_RESULT);
     response =
-        cassandraOperation.getRecordByIdentifier(
-                actorMessage.getRequestContext(), bulkDb.getKeySpace(), bulkDb.getTableName(), processId, fields);
+            cassandraOperation.getRecordByIdentifier(
+                    actorMessage.getRequestContext(), bulkDb.getKeySpace(), bulkDb.getTableName(), processId, fields);
     @SuppressWarnings("unchecked")
     List<Map<String, Object>> resList =
-        ((List<Map<String, Object>>) response.get(JsonKey.RESPONSE));
+            ((List<Map<String, Object>>) response.get(JsonKey.RESPONSE));
     if (!resList.isEmpty()) {
       Map<String, Object> resMap = resList.get(0);
       if ((int) resMap.get(JsonKey.STATUS) == ProjectUtil.BulkProcessStatus.COMPLETED.getValue()) {
@@ -134,11 +134,11 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
         resMap.put(JsonKey.PROCESS_ID, resMap.get(JsonKey.ID));
         updateResponseStatus(resMap);
         ProjectUtil.removeUnwantedFields(
-            resMap,
-            JsonKey.ID,
-            JsonKey.OBJECT_TYPE,
-            JsonKey.SUCCESS_RESULT,
-            JsonKey.FAILURE_RESULT);
+                resMap,
+                JsonKey.ID,
+                JsonKey.OBJECT_TYPE,
+                JsonKey.SUCCESS_RESULT,
+                JsonKey.FAILURE_RESULT);
         sender().tell(response, self());
       }
     } else {
@@ -158,8 +158,8 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
     }
     response.put(JsonKey.STATUS, status);
     response.put(
-        JsonKey.MESSAGE,
-        MessageFormat.format(BulkUploadJsonKey.OPERATION_STATUS_MSG, status.toLowerCase()));
+            JsonKey.MESSAGE,
+            MessageFormat.format(BulkUploadJsonKey.OPERATION_STATUS_MSG, status.toLowerCase()));
   }
 
   @SuppressWarnings("unchecked")
@@ -168,7 +168,7 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
     Map<String, Object> req = (Map<String, Object>) actorMessage.getRequest().get(JsonKey.DATA);
     req.put(JsonKey.CREATED_BY, req.get(JsonKey.CREATED_BY));
     if (((String) req.get(JsonKey.OBJECT_TYPE)).equals(JsonKey.BATCH_LEARNER_ENROL)
-        || ((String) req.get(JsonKey.OBJECT_TYPE)).equals(JsonKey.BATCH_LEARNER_UNENROL)) {
+            || ((String) req.get(JsonKey.OBJECT_TYPE)).equals(JsonKey.BATCH_LEARNER_UNENROL)) {
       processBulkBatchEnrollment(actorMessage.getRequestContext(), req, processId, (String) req.get(JsonKey.OBJECT_TYPE));
     }
   }
@@ -180,8 +180,8 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
 
       if (null != PropertiesCache.getInstance().getProperty(JsonKey.BULK_UPLOAD_BATCH_DATA_SIZE)) {
         batchDataSize =
-            (Integer.parseInt(
-                PropertiesCache.getInstance().getProperty(JsonKey.BULK_UPLOAD_BATCH_DATA_SIZE)));
+                (Integer.parseInt(
+                        PropertiesCache.getInstance().getProperty(JsonKey.BULK_UPLOAD_BATCH_DATA_SIZE)));
         logger.debug(requestContext, "bulk upload batch data size read from config file " + batchDataSize);
       }
       validateFileSizeAgainstLineNumbers(batchDataSize, batchList.size());
@@ -190,15 +190,15 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
         validateBulkUploadFields(columns, bulkBatchAllowedFields, false);
       } else {
         throw new ProjectCommonException(
-            ResponseCode.csvError.getErrorCode(),
-            ResponseCode.csvError.getErrorMessage(),
-            ResponseCode.CLIENT_ERROR.getResponseCode());
+                ResponseCode.csvError.getErrorCode(),
+                ResponseCode.csvError.getErrorMessage(),
+                ResponseCode.CLIENT_ERROR.getResponseCode());
       }
     } else {
       throw new ProjectCommonException(
-          ResponseCode.csvError.getErrorCode(),
-          ResponseCode.csvError.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.csvError.getErrorCode(),
+              ResponseCode.csvError.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     // save csv file to db
     uploadCsvToDB(
@@ -231,16 +231,16 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
       } catch (Exception e) {
         logger.error(requestContext, "Error while updating csv to DB: " + e.getMessage(), e);
         throw new ProjectCommonException(
-            ResponseCode.csvError.getErrorCode(),
-            ResponseCode.csvError.getErrorMessage(),
-            ResponseCode.CLIENT_ERROR.getResponseCode());
+                ResponseCode.csvError.getErrorCode(),
+                ResponseCode.csvError.getErrorMessage(),
+                ResponseCode.CLIENT_ERROR.getResponseCode());
       }
     } else {
       // tell sender that csv file is empty
       throw new ProjectCommonException(
-          ResponseCode.csvError.getErrorCode(),
-          ResponseCode.csvError.getErrorMessage(),
-          ResponseCode.CLIENT_ERROR.getResponseCode());
+              ResponseCode.csvError.getErrorCode(),
+              ResponseCode.csvError.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     // convert userMapList to json string
     Map<String, Object> map = new HashMap<>();
@@ -251,9 +251,9 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
       logger.error(requestContext, ":uploadCsvToDB: Exception while converting map to string: "
               + e.getMessage(), e);
       throw new ProjectCommonException(
-          ResponseCode.internalError.getErrorCode(),
-          ResponseCode.internalError.getErrorMessage(),
-          ResponseCode.SERVER_ERROR.getResponseCode());
+              ResponseCode.internalError.getErrorCode(),
+              ResponseCode.internalError.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
     }
 
     map.put(JsonKey.ID, processId);
@@ -263,7 +263,7 @@ public class BulkUploadManagementActor extends BaseBulkUploadActor {
     map.put(JsonKey.PROCESS_START_TIME, ProjectUtil.getFormattedDate());
     map.put(JsonKey.STATUS, ProjectUtil.BulkProcessStatus.NEW.getValue());
     Response res =
-        cassandraOperation.insertRecord(requestContext, bulkDb.getKeySpace(), bulkDb.getTableName(), map);
+            cassandraOperation.insertRecord(requestContext, bulkDb.getKeySpace(), bulkDb.getTableName(), map);
     res.put(JsonKey.PROCESS_ID, processId);
     logger.info(requestContext, "uploadCsvToDB returned response for processId: " + processId);
     sender().tell(res, self());

@@ -18,7 +18,7 @@ public abstract class BaseActor extends UntypedAbstractActor {
     if (message instanceof Request) {
       Request request = (Request) message;
       String operation = request.getOperation();
-      logger.debug(request.getRequestContext(), "onReceive called for operation: " + operation);
+      logger.info(request.getRequestContext(), "onReceive called for operation: " + operation);
       try {
         onReceive(request);
       } catch (Exception e) {
@@ -36,10 +36,10 @@ public abstract class BaseActor extends UntypedAbstractActor {
 
   public void unSupportedMessage() throws Exception {
     ProjectCommonException exception =
-        new ProjectCommonException(
-            ResponseCode.invalidRequestData.getErrorCode(),
-            ResponseCode.invalidRequestData.getErrorMessage(),
-            ResponseCode.CLIENT_ERROR.getResponseCode());
+            new ProjectCommonException(
+                    ResponseCode.invalidRequestData.getErrorCode(),
+                    ResponseCode.invalidRequestData.getErrorMessage(),
+                    ResponseCode.CLIENT_ERROR.getResponseCode());
     sender().tell(exception, self());
   }
 
@@ -52,7 +52,7 @@ public abstract class BaseActor extends UntypedAbstractActor {
     response.put("response", "SUCCESS");
     return response;
   }
-  
+
   public Response clientError(String message) {
     Response response = new Response();
     response.setResponseCode(ResponseCode.CLIENT_ERROR);

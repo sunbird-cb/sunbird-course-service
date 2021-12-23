@@ -33,7 +33,7 @@ public class CourseBatchCertificateActor extends BaseActor {
 
   @Override
   public void onReceive(Request request) throws Throwable {
-    Util.initializeContext(request, TelemetryEnvKey.USER, this.getClass().getName());
+    Util.initializeContext(request, TelemetryEnvKey.USER);
 
     String requestedOperation = request.getOperation();
     switch (requestedOperation) {
@@ -51,7 +51,7 @@ public class CourseBatchCertificateActor extends BaseActor {
 
   private void addCertificateTemplateToCourseBatch(Request request) {
     Map<String, Object> batchRequest =
-        (Map<String, Object>) request.getRequest().get(JsonKey.BATCH);
+            (Map<String, Object>) request.getRequest().get(JsonKey.BATCH);
     final String batchId = (String) batchRequest.get(JsonKey.BATCH_ID);
     final String courseId = (String) batchRequest.get(JsonKey.COURSE_ID);
     CourseBatchUtil.validateCourseBatch(request.getRequestContext(), courseId, batchId);
@@ -62,7 +62,7 @@ public class CourseBatchCertificateActor extends BaseActor {
     courseBatchDao.addCertificateTemplateToCourseBatch(request.getRequestContext(), courseId, batchId, templateId, template);
     logger.info(request.getRequestContext(), "Added certificate template to batchID: " +  batchId);
     Map<String, Object> courseBatch =
-        mapESFieldsToObject(courseBatchDao.getCourseBatch(request.getRequestContext(), courseId, batchId));
+            mapESFieldsToObject(courseBatchDao.getCourseBatch(request.getRequestContext(), courseId, batchId));
     CourseBatchUtil.syncCourseBatchForeground(request.getRequestContext(), batchId, courseBatch);
     logger.info(request.getRequestContext(), "Synced to es certificate template to batchID: " +  batchId);
     Response response = new Response();
@@ -72,7 +72,7 @@ public class CourseBatchCertificateActor extends BaseActor {
 
   private void removeCertificateTemplateFromCourseBatch(Request request) {
     Map<String, Object> batchRequest =
-        (Map<String, Object>) request.getRequest().get(JsonKey.BATCH);
+            (Map<String, Object>) request.getRequest().get(JsonKey.BATCH);
     final String batchId = (String) batchRequest.get(JsonKey.BATCH_ID);
     final String courseId = (String) batchRequest.get(JsonKey.COURSE_ID);
     CourseBatchUtil.validateCourseBatch(request.getRequestContext(), courseId, batchId);
@@ -81,7 +81,7 @@ public class CourseBatchCertificateActor extends BaseActor {
     CourseBatchUtil.validateTemplate(request.getRequestContext(), templateId);
     courseBatchDao.removeCertificateTemplateFromCourseBatch(request.getRequestContext(), courseId, batchId, templateId);
     Map<String, Object> courseBatch =
-        mapESFieldsToObject(courseBatchDao.getCourseBatch(request.getRequestContext(), courseId, batchId));
+            mapESFieldsToObject(courseBatchDao.getCourseBatch(request.getRequestContext(), courseId, batchId));
     CourseBatchUtil.syncCourseBatchForeground(request.getRequestContext(), batchId, courseBatch);
     Response response = new Response();
     response.put(JsonKey.RESPONSE, JsonKey.SUCCESS);
@@ -89,30 +89,30 @@ public class CourseBatchCertificateActor extends BaseActor {
   }
 
   private void validateTemplateDetails(RequestContext requestContext, String templateId, Map<String, Object> template) {
-   Map<String, Object> templateDetails = CourseBatchUtil.validateTemplate(requestContext, templateId);
+    Map<String, Object> templateDetails = CourseBatchUtil.validateTemplate(requestContext, templateId);
     try {
-      if((!templateDetails.containsKey(CourseJsonKey.ISSUER) || !templateDetails.containsKey(CourseJsonKey.SIGNATORY_LIST)) 
-        && (!template.containsKey(CourseJsonKey.ISSUER) || !template.containsKey(CourseJsonKey.SIGNATORY_LIST))){
+      if((!templateDetails.containsKey(CourseJsonKey.ISSUER) || !templateDetails.containsKey(CourseJsonKey.SIGNATORY_LIST))
+              && (!template.containsKey(CourseJsonKey.ISSUER) || !template.containsKey(CourseJsonKey.SIGNATORY_LIST))){
         ProjectCommonException.throwClientErrorException(
                 ResponseCode.CLIENT_ERROR, "Issuer or signatoryList is empty. Invalid template Id: " + templateId);
       }
       Map<String, Object> templateData = (Map<String, Object>) templateDetails.getOrDefault(JsonKey.DATA, new HashMap<>());
       String certName = (String) templateData.getOrDefault(JsonKey.TITLE , (String)templateDetails.getOrDefault(JsonKey.NAME, ""));
-      
+
       template.put(JsonKey.NAME, certName);
       template.put(JsonKey.URL, templateDetails.getOrDefault("artifactUrl", ""));
       template.put(JsonKey.CRITERIA, mapper.writeValueAsString(template.get(JsonKey.CRITERIA)));
       if (null != template.get(CourseJsonKey.ISSUER)) {
         template.put(
-            CourseJsonKey.ISSUER, mapper.writeValueAsString(template.get(CourseJsonKey.ISSUER)));
+                CourseJsonKey.ISSUER, mapper.writeValueAsString(template.get(CourseJsonKey.ISSUER)));
       } else {
         template.put(
                 CourseJsonKey.ISSUER, mapper.writeValueAsString(templateDetails.get(CourseJsonKey.ISSUER)));
       }
       if (null != template.get(CourseJsonKey.SIGNATORY_LIST)) {
         template.put(
-            CourseJsonKey.SIGNATORY_LIST,
-            mapper.writeValueAsString(template.get(CourseJsonKey.SIGNATORY_LIST)));
+                CourseJsonKey.SIGNATORY_LIST,
+                mapper.writeValueAsString(template.get(CourseJsonKey.SIGNATORY_LIST)));
       } else {
         template.put(
                 CourseJsonKey.ISSUER, mapper.writeValueAsString(templateDetails.get(CourseJsonKey.SIGNATORY_LIST)));
@@ -124,21 +124,21 @@ public class CourseBatchCertificateActor extends BaseActor {
       }
     } catch (JsonProcessingException ex) {
       ProjectCommonException.throwClientErrorException(
-          ResponseCode.invalidData,
-          "Error in parsing template data, Please check "
-              + JsonKey.CRITERIA
-              + ","
-              + CourseJsonKey.ISSUER
-              + " and "
-              + CourseJsonKey.SIGNATORY_LIST
-              + " fields");
+              ResponseCode.invalidData,
+              "Error in parsing template data, Please check "
+                      + JsonKey.CRITERIA
+                      + ","
+                      + CourseJsonKey.ISSUER
+                      + " and "
+                      + CourseJsonKey.SIGNATORY_LIST
+                      + " fields");
     }
   }
 
   private Map<String, Object> mapESFieldsToObject(Map<String, Object> courseBatch) {
     Map<String, Map<String, Object>> certificateTemplates =
-        (Map<String, Map<String, Object>>)
-            courseBatch.getOrDefault(CourseJsonKey.CERT_TEMPLATES, null);
+            (Map<String, Map<String, Object>>)
+                    courseBatch.getOrDefault(CourseJsonKey.CERT_TEMPLATES, null);
     if(MapUtils.isNotEmpty(certificateTemplates)){
       certificateTemplates
               .entrySet()
@@ -155,10 +155,10 @@ public class CourseBatchCertificateActor extends BaseActor {
   private Map<String, Object> mapToObject(Map<String, Object> template) {
     try {
       template.put(
-          JsonKey.CRITERIA,
-          mapper.readValue(
-              (String) template.get(JsonKey.CRITERIA),
-              new TypeReference<HashMap<String, Object>>() {}));
+              JsonKey.CRITERIA,
+              mapper.readValue(
+                      (String) template.get(JsonKey.CRITERIA),
+                      new TypeReference<HashMap<String, Object>>() {}));
       if(StringUtils.isNotEmpty((String)template.get(CourseJsonKey.SIGNATORY_LIST))) {
         template.put(
                 CourseJsonKey.SIGNATORY_LIST,
