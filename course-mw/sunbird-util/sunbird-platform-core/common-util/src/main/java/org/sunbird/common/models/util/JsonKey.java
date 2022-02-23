@@ -1066,6 +1066,10 @@ public final class JsonKey {
   public static final String OLD_CREATED_DATE = "oldCreatedDate";
   public static final String X_LOGGING_HEADERS = "X_LOGGING_HEADERS";
   public static final String LAST_CONTENT_ACCESS_TIME = "lastcontentaccesstime";
+  public static final String ENROLLABLE_ITEM_ID = "enrollableItemId";
+  public static final String FIXED_BATCH_ID = "fixedBatchId";
+  public static final String COURSE_USER_ENROLMENTS_DB = "course_user_enrolments_db";
+  public static final String COURSE_BATCH_PATH = "sunbird_course_batch_path";
 
   private JsonKey() {}
 }
