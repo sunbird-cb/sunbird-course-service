@@ -31,8 +31,6 @@ public class CourseBatchNotificationActor extends BaseActor {
           .getProperty(JsonKey.SUNBIRD_COURSE_BATCH_NOTIFICATION_SIGNATURE);
   private static String baseUrl =
       PropertiesCache.getInstance().getProperty(JsonKey.SUNBIRD_WEB_URL);
-  private static String courseBatchPath =
-          PropertiesCache.getInstance().getProperty(JsonKey.COURSE_BATCH_PATH);
   private UserOrgService userOrgService = UserOrgServiceImpl.getInstance();
 
   @Override
