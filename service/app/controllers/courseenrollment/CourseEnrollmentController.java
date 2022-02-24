@@ -9,6 +9,7 @@ import org.sunbird.common.models.util.ProjectUtil;
 import org.sunbird.common.request.Request;
 import play.mvc.Http;
 import play.mvc.Result;
+import org.sunbird.learner.util.EventUtil;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -186,6 +187,18 @@ public class CourseEnrollmentController extends BaseController {
                 return null;
             },
             getAllRequestHeaders((httpRequest)),
+            httpRequest);
+    }
+  
+  public CompletionStage<Result> getParticipantsForFixedBatch(Http.Request httpRequest) {
+        return handleRequest(courseEnrolmentActor, "getParticipantsForFixedBatch",
+            httpRequest.body().asJson(),
+            (request) -> {
+                EventUtil.handleFixedBatchIdRequest((Request) request);
+                new CourseEnrollmentRequestValidator().validateCourseParticipant((Request) request);
+                return null;
+            },
+            getAllRequestHeaders(httpRequest),
             httpRequest);
     }
 }
