@@ -95,7 +95,7 @@ public class UserCoursesDaoTest {
     when(cassandraOperation.getRecordByIdentifier(
             Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap(), Mockito.any()))
             .thenReturn(readResponse);
-    List<Map<String, Object>> response = userCoursesDao.listEnrolments(null, JsonKey.USER_ID);
+    List<Map<String, Object>> response = userCoursesDao.listEnrolments(null, JsonKey.USER_ID, null);
     Assert.assertEquals(null, response);
   }
 
@@ -108,7 +108,7 @@ public class UserCoursesDaoTest {
     when(cassandraOperation.getRecordByIdentifier(
             Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap(), Mockito.any()))
             .thenReturn(readResponse);
-    List<Map<String, Object>> response = userCoursesDao.listEnrolments(null, JsonKey.USER_ID);
+    List<Map<String, Object>> response = userCoursesDao.listEnrolments(null, JsonKey.USER_ID, null);
     Assert.assertNotEquals(null, response);
   }
 
