@@ -35,7 +35,6 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
     private val assessmentAggregatorDBInfo = Util.dbInfoMap.get(JsonKey.ASSESSMENT_AGGREGATOR_DB)
     private val enrolmentDBInfo = Util.dbInfoMap.get(JsonKey.LEARNER_COURSE_DB)
     val dateFormatter = ProjectUtil.getDateFormatter
-
     //Added default fields in env varible:
     val defaultFields: Set[String] = if(ProjectUtil.getConfigValue("content.default.fields")!=null) ProjectUtil.getConfigValue("content.default.fields").split(",").toSet else Set[String]("contentid","userid","batchid","courseid","completedcount","completionpercentage","lastcompletedtime","status","viewcount")
     val jsonFields = Set[String]("progressdetails")
@@ -379,7 +378,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                 m.put(JsonKey.COLLECTION_ID, m.getOrDefault(JsonKey.COURSE_ID, ""))
                 jsonFields.foreach(field =>
                     if(fields.contains(field))
-                        m.put(field, m.getOrDefault(field,""))
+                        m.put(field, mapper.readTree(m.get(field).asInstanceOf[String]))
                 )
                 val formattedMap = JsonUtil.convertWithDateFormat(m, classOf[util.Map[String, Object]], dateFormatter)
                 if (fields.contains(JsonKey.ASSESSMENT_SCORE))
