@@ -143,9 +143,12 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         }
         activeEnrolments.filter(enrolment => coursesMap.containsKey(enrolment.get(JsonKey.COURSE_ID))).map(enrolment => {
             val courseContent = coursesMap.get(enrolment.get(JsonKey.COURSE_ID))
+            logger.info(request.getRequestContext, "course id :" + coursesMap.get(enrolment.get(JsonKey.COURSE_ID)))
             enrolment.put(JsonKey.COURSE_NAME, courseContent.get(JsonKey.NAME))
+            logger.info(request.getRequestContext, "course name:" + courseContent.get(JsonKey.NAME))
             enrolment.put(JsonKey.DESCRIPTION, courseContent.get(JsonKey.DESCRIPTION))
             enrolment.put(JsonKey.LEAF_NODE_COUNT, courseContent.get(JsonKey.LEAF_NODE_COUNT))
+            logger.info(request.getRequestContext, "leaf node count:" + courseContent.get(JsonKey.LEAF_NODE_COUNT))
             enrolment.put(JsonKey.COURSE_LOGO_URL, courseContent.get(JsonKey.APP_ICON))
             enrolment.put(JsonKey.CONTENT_ID, enrolment.get(JsonKey.COURSE_ID))
             enrolment.put(JsonKey.COLLECTION_ID, enrolment.get(JsonKey.COURSE_ID))
@@ -271,12 +274,18 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         TelemetryUtil.telemetryProcessingCall(request, targetedObject, correlationObject, contextMap, "enrol")
     }
 
-    def updateProgressData(enrolments: java.util.List[java.util.Map[String, AnyRef]], userId: String, courseIds: java.util.List[String], requestContext: RequestContext): util.List[java.util.Map[String, AnyRef]] = {
+    def updateProgressData(request: Request, enrolments: java.util.List[java.util.Map[String, AnyRef]], userId: String, courseIds: java.util.List[String], requestContext: RequestContext): util.List[java.util.Map[String, AnyRef]] = {
         enrolments.map(enrolment => {
+            logger.info(request.getRequestContext, "user id :" + userId)
+            logger.info(request.getRequestContext, "courseid :" + courseIds.toString)
             val leafNodesCount: Int = enrolment.getOrDefault("leafNodesCount", 0.asInstanceOf[AnyRef]).asInstanceOf[Int]
+            logger.info(request.getRequestContext, "leafNodesCount = " + leafNodesCount)
             val progress: Int = enrolment.getOrDefault("progress", 0.asInstanceOf[AnyRef]).asInstanceOf[Int]
+            logger.info(request.getRequestContext, "progress = " + progress)
             enrolment.put("status", getCompletionStatus(progress, leafNodesCount).asInstanceOf[AnyRef])
             enrolment.put("completionPercentage", getCompletionPerc(progress, leafNodesCount).asInstanceOf[AnyRef])
+            logger.info(request.getRequestContext, "completionPercentage :" + enrolment.get("completionPercentage").toString)
+
         })
         enrolments
     }
