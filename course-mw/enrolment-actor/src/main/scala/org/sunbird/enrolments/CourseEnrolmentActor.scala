@@ -223,7 +223,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def upsertEnrollment(userId: String, courseId: String, batchId: String, data: java.util.Map[String, AnyRef], isNew: Boolean, requestContext: RequestContext): Unit = {
         val dataMap = CassandraUtil.changeCassandraColumnMapping(data)
-        // code for find root cause of null value in prod(16-02-2023)
+        // code for  find root cause of null value in prod(16-02-2023)
         try {
             val ActiveStatus = dataMap.get(JsonKey.ACTIVE);
             logger.info(requestContext, "upsertEnrollment :: IsNew :: " + isNew + " ActiveStatus :: " + ActiveStatus + " DataMap is :: " + dataMap)
