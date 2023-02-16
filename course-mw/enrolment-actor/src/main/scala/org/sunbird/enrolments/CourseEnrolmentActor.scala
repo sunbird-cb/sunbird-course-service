@@ -223,6 +223,19 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def upsertEnrollment(userId: String, courseId: String, batchId: String, data: java.util.Map[String, AnyRef], isNew: Boolean, requestContext: RequestContext): Unit = {
         val dataMap = CassandraUtil.changeCassandraColumnMapping(data)
+        // code for find root cause of null value in prod(16-02-2023)
+        try {
+            val ActiveStatus = dataMap.get(JsonKey.ACTIVE);
+            logger.info(requestContext, "upsertEnrollment :: IsNew :: " + isNew + " ActiveStatus :: " + ActiveStatus + " DataMap is :: " + dataMap)
+            if (ActiveStatus == null) {
+                throw new Exception("Active Value is null in upsertEnrollment");
+            }
+        } catch {
+            case e: Exception =>
+                logger.error(requestContext, "Exception in upsertEnrollment list : user ::" + userId + "| Exception is:" + e.getMessage, e)
+                throw e;
+        }
+        // END
         if(isNew) {
             userCoursesDao.insertV2(requestContext, dataMap)
         } else {
