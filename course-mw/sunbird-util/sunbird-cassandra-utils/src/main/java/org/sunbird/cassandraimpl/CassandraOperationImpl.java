@@ -558,8 +558,10 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
       selectQuery.where().and(eq(propertyName, propertyValue));
       selectQuery.allowFiltering();
       if (null != selectQuery) logger.debug(requestContext, selectQuery.getQueryString());
+       logger.info(requestContext, " Query is :: "+selectQuery.getQueryString());
       ResultSet results =
           connectionManager.getSession(keyspaceName).execute(selectQuery.allowFiltering());
+      logger.info(requestContext, " Query Run Sucessfully ");
       response = CassandraUtil.createResponse(results);
     } catch (Exception e) {
       logger.error(requestContext, 

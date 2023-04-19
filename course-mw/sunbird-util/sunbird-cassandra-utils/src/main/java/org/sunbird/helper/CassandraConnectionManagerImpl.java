@@ -31,8 +31,10 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
   public Session getSession(String keyspace) {
     Session session = cassandraSessionMap.get(keyspace);
     if (null != session) {
+      logger.info(null," Existing Connection ");
       return session;
     } else {
+      logger.info(null," New Connection Created ");
       Session session2 = cluster.connect(keyspace);
       cassandraSessionMap.put(keyspace, session2);
       return session2;
