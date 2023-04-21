@@ -1048,6 +1048,7 @@ public final class JsonKey {
   public static final String X_SESSION_ID = "x-session-id";
   public static final String X_TRACE_ID = "x-trace-id";
   public static final String USER_ENROLMENTS_DB = "user_enrolments";
+  public static final String ENROLMENT_BATCH_LOOKUP = "enrollment_batch_lookup";
   public static final List<String> CHANGE_IN_SIMPLE_DATE_FORMAT = Arrays.asList("startDate", "endDate", "enrollmentEndDate");
   public static final List<String> CHANGE_IN_DATE_FORMAT = Arrays.asList("createdDate", "updatedDate");
   public static final List<String> CHANGE_IN_DATE_FORMAT_ALL = Arrays.asList("startDate", "endDate", "enrollmentEndDate", "createdDate", "updatedDate");
