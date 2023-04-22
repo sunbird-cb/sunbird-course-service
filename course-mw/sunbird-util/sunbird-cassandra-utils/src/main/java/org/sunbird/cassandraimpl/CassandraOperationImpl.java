@@ -428,6 +428,12 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
   @Override
   public Response getRecordByIdentifier(
           RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields) {
+      return getRecordByIdentifier(requestContext, keyspaceName, tableName, key, fields, -1);
+  }
+
+  @Override
+  public Response getRecordByIdentifier(
+          RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields, int limit) {
     long startTime = System.currentTimeMillis();
     logger.debug(requestContext, "Cassandra Service getRecordBy key method started at ==" + startTime);
     Response response = new Response();
@@ -453,8 +459,11 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
                   CassandraUtil.createQuery(x.getKey(), x.getValue(), selectWhere);
                 });
       }
-      logger.debug(requestContext, selectWhere.getQueryString());
-      ResultSet results = session.execute(selectWhere);
+      if  (limit != -1) {
+        selectQuery.limit(limit);
+      }
+      logger.info(requestContext, selectQuery.getQueryString());
+      ResultSet results = session.execute(selectQuery);
       response = CassandraUtil.createResponse(results);
     } catch (Exception e) {
       logger.error(requestContext, Constants.EXCEPTION_MSG_FETCH + tableName + " : " + e.getMessage(), e);

@@ -290,4 +290,5 @@ public interface CassandraOperation {
    */
   Response batchInsertLogged(RequestContext requestContext, String keyspaceName, String tableName, List<Map<String, Object>> records);
 
+  Response getRecordByIdentifier(RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields, int limit);
 }

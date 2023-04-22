@@ -63,4 +63,5 @@ public interface Constants {
   public static final String GTE = ">=";
   public static final String GT = ">";
   public static final String ID = "id";
+  public static final Integer DEFAULT_LIMIT = 250;
 }

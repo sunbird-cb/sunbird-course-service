@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.sunbird.cassandra.CassandraOperation;
+import org.sunbird.common.Constants;
 import org.sunbird.common.models.response.Response;
 import org.sunbird.common.models.util.JsonKey;
 import org.sunbird.common.request.RequestContext;
@@ -120,7 +121,7 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     Map<String, Object> queryMap = new HashMap<>();
     queryMap.put(JsonKey.BATCH_ID, batchId);
     Response response =
-            cassandraOperation.getRecordByIdentifier(requestContext,KEYSPACE_NAME, ENROLMENT_BATCH_LOOKUP, queryMap, null);
+            cassandraOperation.getRecordByIdentifier(requestContext,KEYSPACE_NAME, ENROLMENT_BATCH_LOOKUP, queryMap, null, Constants.DEFAULT_LIMIT);
         /*cassandraOperation.getRecords(
                 requestContext, KEYSPACE_NAME, USER_ENROLMENTS, queryMap, Arrays.asList(JsonKey.USER_ID, JsonKey.ACTIVE));*/
     List<Map<String, Object>> userCoursesList =
@@ -128,11 +129,14 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     if (CollectionUtils.isEmpty(userCoursesList)) {
       return null;
     }
-    return userCoursesList
-        .stream()
-        .filter(userCourse -> (active == (boolean) userCourse.get(JsonKey.ACTIVE)))
-        .map(userCourse -> (String) userCourse.get(JsonKey.USER_ID))
-        .collect(Collectors.toList());
+    List<String> userList = new ArrayList<String>();
+    for(Map<String, Object> userCourse : userCoursesList) {
+      if(userCourse.get(JsonKey.ACTIVE) != null 
+        && (active == (boolean) userCourse.get(JsonKey.ACTIVE))) {
+        userList.add((String) userCourse.get(JsonKey.USER_ID));
+      }
+    }
+    return userList;
   }
 
   @Override
