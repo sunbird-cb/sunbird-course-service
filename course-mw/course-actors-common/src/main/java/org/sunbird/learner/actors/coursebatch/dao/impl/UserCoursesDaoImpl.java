@@ -23,7 +23,7 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
   private static final String TABLE_NAME =
       Util.dbInfoMap.get(JsonKey.LEARNER_COURSE_DB).getTableName();
   private static final String USER_ENROLMENTS = Util.dbInfoMap.get(JsonKey.USER_ENROLMENTS_DB).getTableName();
-  private static final String ENROLMENT_BATCH_LOOKUP = Util.dbInfoMap.get(JsonKey.ENROLMENT_BATCH_LOOKUP).getTableName();
+  private static final String ENROLMENT_BATCH_LOOKUP = Util.dbInfoMap.get(JsonKey.ENROLLMENT_BATCH_DB).getTableName();
   public static UserCoursesDao getInstance() {
     if (userCoursesDao == null) {
       userCoursesDao = new UserCoursesDaoImpl();
