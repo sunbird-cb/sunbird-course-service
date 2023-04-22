@@ -23,6 +23,7 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
   private static final String TABLE_NAME =
       Util.dbInfoMap.get(JsonKey.LEARNER_COURSE_DB).getTableName();
   private static final String USER_ENROLMENTS = Util.dbInfoMap.get(JsonKey.USER_ENROLMENTS_DB).getTableName();
+  private static final String ENROLMENT_BATCH_LOOKUP = Util.dbInfoMap.get(JsonKey.ENROLMENT_BATCH_LOOKUP).getTableName();
   public static UserCoursesDao getInstance() {
     if (userCoursesDao == null) {
       userCoursesDao = new UserCoursesDaoImpl();
@@ -119,7 +120,7 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     Map<String, Object> queryMap = new HashMap<>();
     queryMap.put(JsonKey.BATCH_ID, batchId);
     Response response =
-            cassandraOperation.getRecordsByIndexedProperty(KEYSPACE_NAME, USER_ENROLMENTS, "batchid", batchId, requestContext);
+            cassandraOperation.getRecordByIdentifier(requestContext,KEYSPACE_NAME, ENROLMENT_BATCH_LOOKUP, queryMap, null);
         /*cassandraOperation.getRecords(
                 requestContext, KEYSPACE_NAME, USER_ENROLMENTS, queryMap, Arrays.asList(JsonKey.USER_ID, JsonKey.ACTIVE));*/
     List<Map<String, Object>> userCoursesList =
