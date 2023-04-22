@@ -146,7 +146,9 @@ public final class JsonKey {
   public static final String COURSE_CREATED_FOR = "createdFor";
   public static final String COURSE_CREATOR = "courseCreator";
   public static final String COURSE_DURATION = "courseDuration";
+  public static final String BATCH_USER_DB = "batch_user_mapping";
   public static final String COURSE_ENROLL_DATE = "enrolledDate";
+  public static final String COURSE_ENROLLMENT_DATE = "enrolled_date";
   public static final String COURSE_ID = "courseId";
   public static final String COURSE_IDS = "courseIds";
   public static final String COURSE_LIST = "courseList";
@@ -320,6 +322,7 @@ public final class JsonKey {
   public static final String LEAF_NODE_COUNT = "leafNodesCount";
   public static final String LEARNER_CONTENT_DB = "learnerContent_db";
   public static final String LEARNER_COURSE_DB = "learnerCourse_db";
+
   public static final String LEARNER_SERVICE = "Learner service";
   public static final String LEVEL = "level";
   public static final String LIMIT = "limit";
@@ -619,6 +622,7 @@ public final class JsonKey {
   public static final String USER_DB = "user_db";
   public static final String USER_FOUND = "user exist with this login Id.";
   public static final String USER_ID = "userId";
+  public static final String ENROLLED_DATE = "enrolled_date";
   public static final String USER_IDs = "userIds";
   public static final String USER_LIST = "userList";
   public static final String USER_LIST_REQ = "userListReq";
@@ -1048,7 +1052,7 @@ public final class JsonKey {
   public static final String X_SESSION_ID = "x-session-id";
   public static final String X_TRACE_ID = "x-trace-id";
   public static final String USER_ENROLMENTS_DB = "user_enrolments";
-  public static final String ENROLMENT_BATCH_LOOKUP = "enrollment_batch_lookup";
+  public static final String ENROLLMENT_BATCH_DB = "enrollment_batch_lookup";
   public static final List<String> CHANGE_IN_SIMPLE_DATE_FORMAT = Arrays.asList("startDate", "endDate", "enrollmentEndDate");
   public static final List<String> CHANGE_IN_DATE_FORMAT = Arrays.asList("createdDate", "updatedDate");
   public static final List<String> CHANGE_IN_DATE_FORMAT_ALL = Arrays.asList("startDate", "endDate", "enrollmentEndDate", "createdDate", "updatedDate");
