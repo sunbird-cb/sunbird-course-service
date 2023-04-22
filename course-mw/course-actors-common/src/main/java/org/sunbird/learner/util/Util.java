@@ -71,6 +71,7 @@ public final class Util {
     dbInfoMap.put(
             JsonKey.ASSESSMENT_AGGREGATOR_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "assessment_aggregator"));
     dbInfoMap.put(JsonKey.USER_ENROLMENTS_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "user_enrolments"));
+    dbInfoMap.put(JsonKey.ENROLLMENT_BATCH_DB, getDbInfoObject(COURSE_KEY_SPACE_NAME, "enrollment_batch_lookup"));
   }
 
   /**

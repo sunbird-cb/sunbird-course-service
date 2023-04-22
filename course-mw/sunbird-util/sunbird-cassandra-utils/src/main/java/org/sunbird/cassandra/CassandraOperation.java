@@ -176,10 +176,10 @@ public interface CassandraOperation {
 //          String tableName,
 //          Map<String, Object> request,
 //          Map<String, Object> compositeKey);
-Response insertBatchLookupRecord(
-        RequestContext requestContext, String keyspaceName,
-        String tableName,
-        Map<String, Object> records);
+//Response insertBatchLookupRecord(
+//        RequestContext requestContext, String keyspaceName,
+//        String tableName,
+//        Map<String, Object> records);
 
  // insertRecord(RequestContext requestContext, String keyspaceName, String tableName, Map<String, Object> request);
 

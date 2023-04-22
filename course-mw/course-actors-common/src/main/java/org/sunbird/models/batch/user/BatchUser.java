@@ -4,27 +4,35 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.sql.Timestamp;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BatchUser implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private String batchid;
+    private String batchId;
 
-    private String userid;
+    private String userId;
 
     private Boolean active;
 
-    private Date enrollDate;
+    private Timestamp enrolledDate;
 
-    public String getUserid() {
-        return userid;
+    public String getBatchId() {
+        return batchId;
     }
 
-    public void setUserid(String userid) {
-        this.userid = userid;
+    public void setBatchId(String batchId) {
+        this.batchId = batchId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public Boolean getActive() {
@@ -35,19 +43,12 @@ public class BatchUser implements Serializable {
         this.active = active;
     }
 
-    public Date getEnrollDate() {
-        return enrollDate;
+    public Timestamp getEnrolledDate() {
+        return enrolledDate;
     }
 
-    public void setEnrollDate(Date enrollDate) {
-        this.enrollDate = enrollDate;
+    public void setEnrolledDate(Timestamp enrolledDate) {
+        this.enrolledDate = enrolledDate;
     }
-
-    public String getBatchid() {
-        return batchid;
-    }
-
-    public void setBatchid(String batchid) {
-        this.batchid = batchid;
-    }
+    
 }
