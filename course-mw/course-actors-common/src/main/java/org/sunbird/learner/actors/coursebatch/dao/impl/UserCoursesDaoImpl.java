@@ -128,11 +128,14 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     if (CollectionUtils.isEmpty(userCoursesList)) {
       return null;
     }
-    return userCoursesList
-        .stream()
-        .filter(userCourse -> (active == (boolean) userCourse.get(JsonKey.ACTIVE)))
-        .map(userCourse -> (String) userCourse.get(JsonKey.USER_ID))
-        .collect(Collectors.toList());
+    List<String> userList = new ArrayList<String>();
+    for (Map<String, Object> userCourse : userCoursesList) {
+      if (userCourse.get(JsonKey.ACTIVE) != null &&
+              (active == (boolean) userCourse.get(JsonKey.ACTIVE))) {
+        userList.add((String) userCourse.get(JsonKey.USER_ID));
+      }
+    }
+    return userList;
   }
 
   @Override
