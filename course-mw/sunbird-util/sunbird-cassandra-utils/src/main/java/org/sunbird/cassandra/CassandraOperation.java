@@ -171,9 +171,31 @@ public interface CassandraOperation {
           String tableName,
           Map<String, Object> updateAttributes,
           Map<String, Object> compositeKey);
+//   Response updateBatchRecord(
+//          RequestContext requestContext, String keyspaceName,
+//          String tableName,
+//          Map<String, Object> request,
+//          Map<String, Object> compositeKey);
+Response insertBatchLookupRecord(
+        RequestContext requestContext, String keyspaceName,
+        String tableName,
+        Map<String, Object> records);
+
+ // insertRecord(RequestContext requestContext, String keyspaceName, String tableName, Map<String, Object> request);
+
+Response updateBatchLookupRecord(
+        RequestContext requestContext, String keyspaceName,
+        String tableName,
+        Map<String, Object> updateAttributes,
+        Map<String, Object> compositeKey);
+
+//Response batchUpdateLookup(
+//          String keyspaceName, String tableName,
+//          List<Map<String, Map<String, Object>>> list,
+//          RequestContext requestContext);
 
   Response getRecordByIdentifier(RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields);
-  
+
   /**
    * Method to perform batch insert operation.
    *
@@ -185,6 +207,7 @@ public interface CassandraOperation {
    */
   Response batchInsert(RequestContext requestContext, String keyspaceName, String tableName, List<Map<String, Object>> records);
 
+//  Response insertBatch(RequestContext requestContext, String keyspaceName, String tableName, List<Map<String, Object>> records);
 
   public Response getRecords(
           RequestContext requestContext, String keyspace, String table, Map<String, Object> filters, List<String> fields);
