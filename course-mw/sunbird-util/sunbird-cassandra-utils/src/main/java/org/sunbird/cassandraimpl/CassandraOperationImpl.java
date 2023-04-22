@@ -462,7 +462,7 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
       if  (limit != -1) {
         selectQuery.limit(limit);
       }
-      logger.info(requestContext, selectQuery.getQueryString());
+      logger.debug(requestContext, selectQuery.getQueryString());
       ResultSet results = session.execute(selectQuery);
       response = CassandraUtil.createResponse(results);
     } catch (Exception e) {
