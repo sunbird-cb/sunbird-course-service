@@ -425,7 +425,6 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     return response;
   }
 
-
   @Override
   public Response getRecordByIdentifier(
           RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields) {
@@ -507,7 +506,6 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     return response;
   }
 
-
   @Override
   public Response batchUpdate(
           String keyspaceName, String tableName, List<Map<String, Map<String, Object>>> list, RequestContext requestContext) {
@@ -537,7 +535,6 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     logQueryElapseTime("batchUpdate", startTime);
     return response;
   }
-
 
   private void logQueryElapseTime(String operation, long startTime) {
 
