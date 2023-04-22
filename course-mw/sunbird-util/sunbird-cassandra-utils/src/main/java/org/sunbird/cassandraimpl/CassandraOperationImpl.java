@@ -424,54 +424,7 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     logQueryElapseTime("updateRecord", startTime);
     return response;
   }
-  @Override
-  public Response updateBatchLookupRecord(
-          RequestContext requestContext, String keyspaceName,
-          String tableName,
-          Map<String, Object> request,
-          Map<String, Object> compositeKey) {
 
-    long startTime = System.currentTimeMillis();
-    logger.debug(requestContext, "Cassandra Service updateBatchLookupRecord method started at ==" + startTime);
-    Response response = new Response();
-    try {
-      Session session = connectionManager.getSession(keyspaceName);
-      Update update = QueryBuilder.update(keyspaceName, tableName);
-      Assignments assignments = update.with();
-      Update.Where where = update.where();
-      request
-              .entrySet()
-              .stream()
-              .forEach(
-                      x -> {
-                        assignments.and(QueryBuilder.set(x.getKey(), x.getValue()));
-                      });
-      compositeKey
-              .entrySet()
-              .stream()
-              .forEach(
-                      x -> {
-                        where.and(eq(x.getKey(), x.getValue()));
-                      });
-      Statement updateQuery = where;
-      logger.debug(requestContext, where.getQueryString());
-      session.execute(updateQuery);
-    } catch (Exception e) {
-      logger.error(requestContext, Constants.EXCEPTION_MSG_UPDATE + tableName + " : " + e.getMessage(), e);
-      if (e.getMessage().contains(JsonKey.UNKNOWN_IDENTIFIER)) {
-        throw new ProjectCommonException(
-                ResponseCode.invalidPropertyError.getErrorCode(),
-                CassandraUtil.processExceptionForUnknownIdentifier(e),
-                ResponseCode.CLIENT_ERROR.getResponseCode());
-      }
-      throw new ProjectCommonException(
-              ResponseCode.dbUpdateError.getErrorCode(),
-              ResponseCode.dbUpdateError.getErrorMessage(),
-              ResponseCode.SERVER_ERROR.getResponseCode());
-    }
-    logQueryElapseTime("updateBatchLookupRecord", startTime);
-    return response;
-  }
 
   @Override
   public Response getRecordByIdentifier(
@@ -553,44 +506,7 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     logQueryElapseTime("batchInsert", startTime);
     return response;
   }
-//  @Override
-//  public Response insertBatchLookupRecord(
-//          RequestContext requestContext, String keyspaceName, String tableName, Map<String, Object> records) {
-//
-//    long startTime = System.currentTimeMillis();
-//    logger.debug(requestContext, "Cassandra Service batchInsert method started at ==" + startTime);
-//
-//    Session session = connectionManager.getSession(keyspaceName);
-//    Response response = new Response();
-//    BatchStatement batchStatement = new BatchStatement();
-//    ResultSet resultSet = null;
-//
-//    try {
-//      for (Map<String, Object> map : records) {
-//        Insert insert = QueryBuilder.insertInto(keyspaceName, tableName);
-//        map.entrySet()
-//                .stream()
-//                .forEach(
-//                        x -> {
-//                          insert.value(x.getKey(), x.getValue());
-//                        });
-//        batchStatement.add(insert);
-//      }
-//      resultSet = session.execute(batchStatement);
-//      response.put(Constants.RESPONSE, Constants.SUCCESS);
-//    } catch (QueryExecutionException
-//             | QueryValidationException
-//             | NoHostAvailableException
-//             | IllegalStateException e) {
-//      logger.error(requestContext, "Cassandra Batch Insert Failed." + e.getMessage(), e);
-//      throw new ProjectCommonException(
-//              ResponseCode.SERVER_ERROR.getErrorCode(),
-//              ResponseCode.SERVER_ERROR.getErrorMessage(),
-//              ResponseCode.SERVER_ERROR.getResponseCode());
-//    }
-//    logQueryElapseTime("batchInsert", startTime);
-//    return response;
-//  }
+
 
   @Override
   public Response batchUpdate(
@@ -621,35 +537,7 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
     logQueryElapseTime("batchUpdate", startTime);
     return response;
   }
-//  @Override
-//  public Response batchUpdateLookup(
-//          String keyspaceName, String tableName, List<Map<String, Map<String, Object>>> list, RequestContext requestContext) {
-//
-//    Session session = connectionManager.getSession(keyspaceName);
-//    BatchStatement batchStatement = new BatchStatement();
-//    long startTime = System.currentTimeMillis();
-//    logger.debug(requestContext, "Cassandra Service batchUpdate method started at ==" + startTime);
-//    Response response = new Response();
-//    ResultSet resultSet = null;
-//    try {
-//      for (Map<String, Map<String, Object>> record : list) {
-//        Map<String, Object> primaryKey = record.get(JsonKey.PRIMARY_KEY);
-//        Map<String, Object> nonPKRecord = record.get(JsonKey.NON_PRIMARY_KEY);
-//        batchStatement.add(
-//                CassandraUtil.createUpdateQuery(primaryKey, nonPKRecord, keyspaceName, tableName));
-//      }
-//      resultSet = session.execute(batchStatement);
-//      response.put(Constants.RESPONSE, Constants.SUCCESS);
-//    } catch (Exception ex) {
-//      logger.error(requestContext, "Cassandra Batch Update failed " + ex.getMessage(), ex);
-//      throw new ProjectCommonException(
-//              ResponseCode.SERVER_ERROR.getErrorCode(),
-//              ResponseCode.SERVER_ERROR.getErrorMessage(),
-//              ResponseCode.SERVER_ERROR.getResponseCode());
-//    }
-//    logQueryElapseTime("batchUpdate", startTime);
-//    return response;
-//  }
+
 
   private void logQueryElapseTime(String operation, long startTime) {
 
