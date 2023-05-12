@@ -247,7 +247,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             batchUserDao.insertBatchLookupRecord(requestContext,dataBatchMap)
         } else {
             userCoursesDao.updateV2(requestContext, userId, courseId, batchId, dataMap)
-            batchUserDao.updateBatchLookupRecord(requestContext, batchId, userId, dataBatchMap)
+            batchUserDao.updateBatchLookupRecord(requestContext, batchId, userId, dataBatchMap, dataMap)
         }
     }
 
