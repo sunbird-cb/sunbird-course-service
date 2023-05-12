@@ -22,7 +22,7 @@ public interface BatchUserDao {
     BatchUser read(RequestContext requestContext, String batchId, String userId);
     Response insertBatchLookupRecord(RequestContext requestContext, Map<String, Object> userCoursesDetails);
 
-    Response updateBatchLookupRecord(RequestContext requestContext, String courseId, String batchId, Map<String, Object> updateAttributes,Map<String, Object> activeStatus);
+    Response updateBatchLookupRecord(RequestContext requestContext, String courseId, String batchId, Map<String, Object> updateAttributes);
 
 
 }

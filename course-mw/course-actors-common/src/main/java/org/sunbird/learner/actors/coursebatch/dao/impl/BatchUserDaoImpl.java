@@ -79,14 +79,16 @@ public class BatchUserDaoImpl implements BatchUserDao{
 
 
     @Override
-    public Response updateBatchLookupRecord(RequestContext requestContext, String batchId, String userId, Map<String, Object> map,Map<String, Object> activeStatus) {
+    public Response updateBatchLookupRecord(RequestContext requestContext, String batchId, String userId, Map<String, Object> map) {
         Map<String, Object> primaryKey = new HashMap<>();
         primaryKey.put(JsonKey.BATCH_ID, batchId);
         primaryKey.put(JsonKey.USER_ID, userId);
         primaryKey.put(JsonKey.ENROLLED_DATE, map.get("enrolled_date"));
         Map<String, Object> attributeMap = new HashMap<>();
-        attributeMap.putAll(activeStatus);
+        attributeMap.putAll(map);
         attributeMap.remove(JsonKey.BATCH_ID);
+        attributeMap.remove(JsonKey.USER_ID);
+        attributeMap.remove(JsonKey.ENROLLED_DATE);
         attributeMap = CassandraUtil.changeCassandraColumnMapping(attributeMap);
         return cassandraOperation.updateRecord(
                 requestContext, KEYSPACE_NAME, ENROLLMENT_BATCH, attributeMap, primaryKey);

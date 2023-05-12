@@ -232,7 +232,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         // code for  find root cause of null value in prod(16-02-2023)
         try {
             val activeStatus = dataMap.get(JsonKey.ACTIVE);
-            logger.info(requestContext, "upsertEnrollment :: IsNew :: " + isNew + " ActiveStatus :: " + activeStatus + " DataMap is :: " + dataMap)
+            logger.info(requestContext, "upsertEnrollment :: IsNew :: " + isNew + " ActiveStatus :: " + activeStatus + " DataMap is :: " + dataMap+ " DataBatchMap:: "+ dataBatchMap)
             if (activeStatus == null) {
                 throw new Exception("Active Value is null in upsertEnrollment");
             }
@@ -247,7 +247,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             batchUserDao.insertBatchLookupRecord(requestContext,dataBatchMap)
         } else {
             userCoursesDao.updateV2(requestContext, userId, courseId, batchId, dataMap)
-            batchUserDao.updateBatchLookupRecord(requestContext, batchId, userId, dataBatchMap, dataMap)
+            batchUserDao.updateBatchLookupRecord(requestContext, batchId, userId, dataBatchMap)
         }
     }
 
