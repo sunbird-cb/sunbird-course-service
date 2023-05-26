@@ -82,15 +82,23 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
         validateEnrolment(batchData, enrolmentData, true)
         val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
-        upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
-        logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
-        cacheUtil.delete(getCacheKey(userId))
-        sender().tell(successResponse(), self)
-        generateTelemetryAudit(userId, courseId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
-        notifyUser(userId, batchData, JsonKey.ADD)
+        val organisationIds = getCourseDetails(util.Arrays.asList(courseId), request)
+        val userChannelId: String = request.getRequest.getOrDefault("x-user-channel-id", "").asInstanceOf[String]
+        // Check organization access or continue for non-restricted courses
+        val hasAccess = organisationIds.isEmpty || organisationIds.contains(userChannelId)
+        if (hasAccess) {
+            upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
+            logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
+            cacheUtil.delete(getCacheKey(userId))
+            sender().tell(successResponse(), self)
+            generateTelemetryAudit(userId, courseId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
+            notifyUser(userId, batchData, JsonKey.ADD)
+        } else {
+            throw new Exception("You don't have access.")
+        }
     }
-    
-    
+
+
     def unEnroll(request:Request): Unit = {
         val courseId: String = request.get(JsonKey.COURSE_ID).asInstanceOf[String]
         val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
@@ -100,12 +108,20 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         getUpdatedStatus(enrolmentData)
         validateEnrolment(batchData, enrolmentData, false)
         val data: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {{ put(JsonKey.ACTIVE, ProjectUtil.ActiveStatus.INACTIVE.getValue.asInstanceOf[AnyRef]) }}
-        upsertEnrollment(userId,courseId, batchId, data, false, request.getRequestContext)
-        logger.info(request.getRequestContext, "CourseEnrolmentActor :: unEnroll :: Deleting redis for key " + getCacheKey(userId))
-        cacheUtil.delete(getCacheKey(userId))
-        sender().tell(successResponse(), self)
-        generateTelemetryAudit(userId, courseId, batchId, data, "unenrol", JsonKey.UPDATE, request.getContext)
-        notifyUser(userId, batchData, JsonKey.REMOVE)
+        val organisationIds = getCourseDetails(util.Arrays.asList(courseId), request)
+        val userChannelId: String = request.getRequest.getOrDefault("x-user-channel-id", "").asInstanceOf[String]
+        // Check organization access or continue for non-restricted courses
+        val hasAccess = organisationIds.isEmpty || organisationIds.contains(userChannelId)
+        if (hasAccess) {
+            upsertEnrollment(userId, courseId, batchId, data, false, request.getRequestContext)
+            logger.info(request.getRequestContext, "CourseEnrolmentActor :: unEnroll :: Deleting redis for key " + getCacheKey(userId))
+            cacheUtil.delete(getCacheKey(userId))
+            sender().tell(successResponse(), self)
+            generateTelemetryAudit(userId, courseId, batchId, data, "unenrol", JsonKey.UPDATE, request.getContext)
+            notifyUser(userId, batchData, JsonKey.REMOVE)
+        } else {
+            throw new Exception("You don't have access.")
+        }
     }
 
     def list(request: Request): Unit = {
@@ -344,6 +360,20 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             contents.get(0).asInstanceOf[java.util.Map[String, AnyRef]].getOrDefault(JsonKey.LEAF_NODE_COUNT, 0.asInstanceOf[AnyRef]).asInstanceOf[Int]
         } else 0}
         enrolmentData.setStatus(getCompletionStatus(enrolmentData.getProgress, leafNodesCount))
+    }
+
+    def getCourseDetails(courseIds: java.util.List[String], request: Request): java.util.List[String] = {
+        val requestBody: String = prepareSearchRequest(courseIds, request)
+        val searchResult: java.util.Map[String, AnyRef] = ContentSearchUtil.searchContentSync(request.getRequestContext, request.getContext.getOrDefault(JsonKey.URL_QUERY_STRING, "").asInstanceOf[String], requestBody, request.get(JsonKey.HEADER).asInstanceOf[java.util.Map[String, String]])
+        val coursesList: java.util.List[java.util.Map[String, AnyRef]] = searchResult.getOrDefault(JsonKey.CONTENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]]
+        val organisationIds = coursesList.asScala.flatMap { course =>
+            val secureSettings = course.get("secureSettings").asInstanceOf[java.util.Map[String, AnyRef]].asScala
+            secureSettings.get("organisation") match {
+                case Some(ids: java.util.List[String]) => ids.asScala
+                case _ => List.empty[String]
+            }
+        }.toList.asJava
+        organisationIds
     }
 }
 
