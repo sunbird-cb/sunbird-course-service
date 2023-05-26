@@ -1076,5 +1076,6 @@ public final class JsonKey {
   public static final String COURSE_USER_ENROLMENTS_DB = "course_user_enrolments_db";
   public static final String COURSE_BATCH_PATH = "sunbird_course_batch_path";
   public static final String CURRENT_OFFSET = "currentOffSet";
+  public static final String SECURE_SETTINGS = "secureSettings";
   private JsonKey() {}
 }
