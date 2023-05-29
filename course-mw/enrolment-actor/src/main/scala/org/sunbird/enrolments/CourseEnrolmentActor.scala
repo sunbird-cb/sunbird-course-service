@@ -82,15 +82,19 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
         validateEnrolment(batchData, enrolmentData, true)
         val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
-        upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
-        logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
-        cacheUtil.delete(getCacheKey(userId))
-        sender().tell(successResponse(), self)
-        generateTelemetryAudit(userId, courseId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
-        notifyUser(userId, batchData, JsonKey.ADD)
+        val hasAccess = validateCourseSecureSettings(courseId, request)
+        if (hasAccess) {
+            upsertEnrollment(userId, courseId, batchId, data, (null == enrolmentData), request.getRequestContext)
+            logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
+            cacheUtil.delete(getCacheKey(userId))
+            sender().tell(successResponse(), self)
+            generateTelemetryAudit(userId, courseId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
+            notifyUser(userId, batchData, JsonKey.ADD)
+        } else {
+            ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, courseId)
+        }
     }
-    
-    
+
     def unEnroll(request:Request): Unit = {
         val courseId: String = request.get(JsonKey.COURSE_ID).asInstanceOf[String]
         val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
@@ -100,12 +104,17 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         getUpdatedStatus(enrolmentData)
         validateEnrolment(batchData, enrolmentData, false)
         val data: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {{ put(JsonKey.ACTIVE, ProjectUtil.ActiveStatus.INACTIVE.getValue.asInstanceOf[AnyRef]) }}
-        upsertEnrollment(userId,courseId, batchId, data, false, request.getRequestContext)
-        logger.info(request.getRequestContext, "CourseEnrolmentActor :: unEnroll :: Deleting redis for key " + getCacheKey(userId))
-        cacheUtil.delete(getCacheKey(userId))
-        sender().tell(successResponse(), self)
-        generateTelemetryAudit(userId, courseId, batchId, data, "unenrol", JsonKey.UPDATE, request.getContext)
-        notifyUser(userId, batchData, JsonKey.REMOVE)
+        val hasAccess = validateCourseSecureSettings(courseId, request)
+        if (hasAccess) {
+            upsertEnrollment(userId, courseId, batchId, data, false, request.getRequestContext)
+            logger.info(request.getRequestContext, "CourseEnrolmentActor :: unEnroll :: Deleting redis for key " + getCacheKey(userId))
+            cacheUtil.delete(getCacheKey(userId))
+            sender().tell(successResponse(), self)
+            generateTelemetryAudit(userId, courseId, batchId, data, "unenrol", JsonKey.UPDATE, request.getContext)
+            notifyUser(userId, batchData, JsonKey.REMOVE)
+        } else {
+            ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, courseId)
+        }
     }
 
     def list(request: Request): Unit = {
@@ -201,21 +210,18 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             new java.util.ArrayList[util.Map[String, AnyRef]]()
         }
     }
-    
-    
+
+
     def validateEnrolment(batchData: CourseBatch, enrolmentData: UserCourses, isEnrol: Boolean): Unit = {
         if(null == batchData) ProjectCommonException.throwClientErrorException(ResponseCode.invalidCourseBatchId, ResponseCode.invalidCourseBatchId.getErrorMessage)
 
         if(!(EnrolmentType.inviteOnly.getVal.equalsIgnoreCase(batchData.getEnrollmentType) ||
           EnrolmentType.open.getVal.equalsIgnoreCase(batchData.getEnrollmentType)))
             ProjectCommonException.throwClientErrorException(ResponseCode.enrollmentTypeValidation, ResponseCode.enrollmentTypeValidation.getErrorMessage)
-        
         if((2 == batchData.getStatus) || (null != batchData.getEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atTime(LocalTime.MAX))))
             ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
-        
         if(isEnrol && null != batchData.getEnrollmentEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEnrollmentEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atTime(LocalTime.MAX)))
             ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchEnrollmentDateEnded, ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage)
-        
         if(isEnrol && null != enrolmentData && enrolmentData.isActive) ProjectCommonException.throwClientErrorException(ResponseCode.userAlreadyEnrolledCourse, ResponseCode.userAlreadyEnrolledCourse.getErrorMessage)
         if(!isEnrol && (null == enrolmentData || !enrolmentData.isActive)) ProjectCommonException.throwClientErrorException(ResponseCode.userNotEnrolledCourse, ResponseCode.userNotEnrolledCourse.getErrorMessage)
         if(!isEnrol && ProjectUtil.ProgressStatus.COMPLETED.getValue == enrolmentData.getStatus) ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
@@ -344,6 +350,43 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             contents.get(0).asInstanceOf[java.util.Map[String, AnyRef]].getOrDefault(JsonKey.LEAF_NODE_COUNT, 0.asInstanceOf[AnyRef]).asInstanceOf[Int]
         } else 0}
         enrolmentData.setStatus(getCompletionStatus(enrolmentData.getProgress, leafNodesCount))
+    }
+
+    private def validateCourseSecureSettings(courseId: String, request: Request): Boolean = {
+        val requestBody: String = prepareContentSearchRequest(courseId, request)
+        val searchResult: java.util.Map[String, AnyRef] = ContentSearchUtil.searchContentSync(request.getRequestContext, request.getContext.getOrDefault(JsonKey.URL_QUERY_STRING, "").asInstanceOf[String], requestBody, request.get(JsonKey.HEADER).asInstanceOf[java.util.Map[String, String]])
+        val coursesList: java.util.List[java.util.Map[String, AnyRef]] = searchResult.getOrDefault(JsonKey.CONTENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]]
+        val organizationIds = new java.util.ArrayList[String]()
+        coursesList.asScala.foreach { course =>
+            val secureSettingsOption = Option(course.get("secureSettings").asInstanceOf[java.util.Map[String, AnyRef]])
+            secureSettingsOption.foreach { secureSettings =>
+                Option(secureSettings.get("organisation")) match {
+                    case Some(ids: java.util.List[String]) =>
+                        organizationIds.addAll(ids)
+                    case _ =>
+                }
+            }
+        }
+        val userChannelId: String = request.getRequest.getOrDefault("x-user-channel-id", "").asInstanceOf[String]
+        val hasAccess = organizationIds.isEmpty || organizationIds.contains(userChannelId)
+        hasAccess
+    }
+
+    private def prepareContentSearchRequest(courseIds: String, request: Request): String = {
+        val filters: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {{
+                put(JsonKey.IDENTIFIER, java.util.Collections.singletonList(courseIds))
+                put(JsonKey.STATUS, "Live")
+                put(JsonKey.MIME_TYPE, JsonKey.COLLECTION_MIME_TYPE)
+                put(JsonKey.TRACKABLE_ENABLED, JsonKey.YES)
+                putAll(request.getRequest.getOrDefault(JsonKey.FILTERS, new java.util.HashMap[String, AnyRef]).asInstanceOf[java.util.Map[String, AnyRef]])
+        }}
+        val searchRequest: java.util.Map[String, java.util.Map[String, AnyRef]] = new java.util.HashMap[String, java.util.Map[String, AnyRef]]() {{
+                put(JsonKey.REQUEST, new java.util.HashMap[String, AnyRef]() {{
+                        put(JsonKey.FILTERS, filters)
+                        put(JsonKey.LIMIT, 1.asInstanceOf[AnyRef])
+                    }})
+        }}
+        new ObjectMapper().writeValueAsString(searchRequest)
     }
 }
 
