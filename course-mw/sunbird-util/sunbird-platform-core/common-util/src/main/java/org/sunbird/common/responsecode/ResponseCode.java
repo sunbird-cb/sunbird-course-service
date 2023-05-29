@@ -832,7 +832,7 @@ public enum ResponseCode {
   cannotUpdateEventSetHavingEnrollments(
           ResponseMessage.Key.CANNOT_UPDATE_EVENT_SET_HAVING_ENROLLMENTS,
           ResponseMessage.Message.CANNOT_UPDATE_EVENT_SET_HAVING_ENROLLMENTS),
-
+  accessDeniedToEnrolOrUnenrolCourse(ResponseMessage.Key.YOU_DO_NOT_HAVE_ACCESS,ResponseMessage.Message.YOU_DO_NOT_HAVE_ACCESS),
   OK(200),
   CLIENT_ERROR(400),
   SERVER_ERROR(500),

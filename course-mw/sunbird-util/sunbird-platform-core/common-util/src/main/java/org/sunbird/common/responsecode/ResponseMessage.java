@@ -459,6 +459,7 @@ public interface ResponseMessage {
     String ERR_CALLING_GROUP_API = "Error while calling group api.";
     String MISSING_FIXED_BATCH_ID = "Missing Fixed Batch Id.";
     String CANNOT_UPDATE_EVENT_SET_HAVING_ENROLLMENTS = "Cannot update event set having enrollments.";
+    String YOU_DO_NOT_HAVE_ACCESS = "User doesn't have access to this Course Id";
   }
 
   interface Key {
@@ -846,5 +847,6 @@ public interface ResponseMessage {
     String ERR_CALLING_GROUP_API = "ERR_CALLING_GROUOP_API";
     String MISSING_FIXED_BATCH_ID = "MISSING_FIXED_BATCH_ID";
     String CANNOT_UPDATE_EVENT_SET_HAVING_ENROLLMENTS = "CANNOT_UPDATE_EVENT_SET_HAVING_ENROLLMENTS";
+    String YOU_DO_NOT_HAVE_ACCESS = "YOU_DO_NOT_HAVE_ACCESS";
   }
 }
