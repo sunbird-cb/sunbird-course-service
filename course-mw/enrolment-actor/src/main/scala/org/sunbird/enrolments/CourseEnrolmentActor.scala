@@ -376,10 +376,10 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         hasAccess
     }
 
-    private def prepareContentSearchRequest(courseIds: String, request: Request): String = {
+    private def prepareContentSearchRequest(courseId: String, request: Request): String = {
         val filters: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {
             {
-                put(JsonKey.IDENTIFIER, java.util.Collections.singletonList(courseIds))
+                put(JsonKey.IDENTIFIER, courseId)
                 put(JsonKey.STATUS, "Live")
                 put(JsonKey.MIME_TYPE, JsonKey.COLLECTION_MIME_TYPE)
                 put(JsonKey.TRACKABLE_ENABLED, JsonKey.YES)
