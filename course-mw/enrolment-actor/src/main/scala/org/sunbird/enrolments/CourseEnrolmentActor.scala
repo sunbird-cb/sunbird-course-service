@@ -173,13 +173,13 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             put(JsonKey.TRACKABLE_ENABLED, JsonKey.YES)
             putAll(request.getRequest.getOrDefault(JsonKey.FILTERS, new java.util.HashMap[String, AnyRef]).asInstanceOf[java.util.Map[String, AnyRef]])
         }}
-        val searchRequest:java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {{
+        val searchRequest:java.util.Map[String, java.util.Map[String, AnyRef]] = new java.util.HashMap[String, java.util.Map[String, AnyRef]]() {{
             put(JsonKey.REQUEST, new java.util.HashMap[String, AnyRef](){{
                 put(JsonKey.FILTERS, filters)
+                put(JsonKey.SECURE_SETTINGS, flag.asInstanceOf[AnyRef])
                 put(JsonKey.LIMIT, courseIds.size().asInstanceOf[AnyRef])
             }})
         }}
-        searchRequest.put(JsonKey.SECURE_SETTINGS, flag.asInstanceOf[AnyRef])
         new ObjectMapper().writeValueAsString(searchRequest)
     }
 
