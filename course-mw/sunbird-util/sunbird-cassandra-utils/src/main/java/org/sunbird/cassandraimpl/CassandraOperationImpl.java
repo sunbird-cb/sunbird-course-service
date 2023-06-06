@@ -454,10 +454,8 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
                 });
       }
       logger.debug(requestContext, selectWhere.getQueryString());
-      logger.info(null,"cassandra query=="+ selectWhere.getQueryString());
       ResultSet results = session.execute(selectWhere);
       response = CassandraUtil.createResponse(results);
-      logger.info(null,"Cassandra response "+response);
     } catch (Exception e) {
       logger.error(requestContext, Constants.EXCEPTION_MSG_FETCH + tableName + " : " + e.getMessage(), e);
       throw new ProjectCommonException(
