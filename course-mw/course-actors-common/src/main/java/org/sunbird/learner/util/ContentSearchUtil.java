@@ -39,9 +39,15 @@ public class ContentSearchUtil {
     contentSearchURL = baseUrl + searchPath;
   }
 
-  private static Map<String, String> getUpdatedHeaders(Map<String, String> headers) {
-    if (headers == null) {
-      headers = new HashMap<>();
+  private static Map<String, String> getUpdatedHeaders(Map<String, String> allHeaders) {
+    Map<String, String> headers = new HashMap<String, String>();
+    if (allHeaders != null) {
+      if (allHeaders.containsKey(JsonKey.X_AUTHENTICATED_USER_TOKEN)) {
+        headers.put(JsonKey.X_AUTHENTICATED_USER_TOKEN, allHeaders.get(JsonKey.X_AUTHENTICATED_USER_TOKEN));
+      }
+      if (allHeaders.containsKey(JsonKey.X_AUTH_USER_ORG_ID)) {
+        headers.put(JsonKey.X_AUTH_USER_ORG_ID, allHeaders.get(JsonKey.X_AUTH_USER_ORG_ID));
+      }
     }
     headers.put(
         HttpHeaders.AUTHORIZATION, JsonKey.BEARER + System.getenv(JsonKey.SUNBIRD_AUTHORIZATION));
