@@ -19,4 +19,5 @@ public class Attrs {
     public static final TypedKey<String> ACTOR_TYPE = TypedKey.<String>create(JsonKey.ACTOR_TYPE);
     public static final TypedKey<String> X_AUTH_TOKEN = TypedKey.<String>create(JsonKey.X_AUTH_TOKEN);
     public static final TypedKey<String> X_LOGGING_HEADERS = TypedKey.<String>create(JsonKey.X_LOGGING_HEADERS);
+    public static final TypedKey<String> X_AUTH_USER_ORG_ID = TypedKey.<String>create(JsonKey.X_AUTH_USER_ORG_ID);
 }

@@ -14,8 +14,6 @@ import org.sunbird.actor.base.BaseActor;
 import org.sunbird.common.exception.ProjectCommonException;
 import org.sunbird.common.models.response.Response;
 import org.sunbird.common.models.util.JsonKey;
-import org.sunbird.common.models.util.LoggerUtil;
-import org.sunbird.common.models.util.ProjectLogger;
 import org.sunbird.common.models.util.TelemetryEnvKey;
 import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
@@ -147,6 +145,19 @@ public class CourseBatchCertificateActor extends BaseActor {
                               certificateTemplates.put(
                                       cert_template.getKey(), mapToObject(cert_template.getValue())));
       courseBatch.put(CourseJsonKey.CERTIFICATE_TEMPLATES_COLUMN, certificateTemplates);
+    }
+    Map<String, Map<String, Object>> batchAttributes =
+            (Map<String, Map<String, Object>>)
+                    courseBatch.getOrDefault(CourseJsonKey.BATCH_ATTRIBUTES, null);
+    if(MapUtils.isNotEmpty(batchAttributes)){
+      batchAttributes
+              .entrySet()
+              .stream()
+              .forEach(
+                      batchAttribute ->
+                              batchAttributes.put(
+                                      batchAttribute.getKey(), mapToObject(batchAttribute.getValue())));
+      courseBatch.put(CourseJsonKey.BATCH_ATTRIBUTES, batchAttributes);
     }
     return courseBatch;
   }

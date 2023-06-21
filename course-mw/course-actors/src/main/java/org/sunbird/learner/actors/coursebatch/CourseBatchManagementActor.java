@@ -97,46 +97,49 @@ public class CourseBatchManagementActor extends BaseActor {
     List<Map<String, Object>> correlatedObject = new ArrayList<>();
     String courseBatchId = ProjectUtil.getUniqueIdFromTimestamp(actorMessage.getEnv());
     Map<String, String> headers =
-        (Map<String, String>) actorMessage.getContext().get(JsonKey.HEADER);
+            (Map<String, String>) actorMessage.getContext().get(JsonKey.HEADER);
     String requestedBy = (String) actorMessage.getContext().get(JsonKey.REQUESTED_BY);
 
     if (Util.isNotNull(request.get(JsonKey.PARTICIPANTS))) {
       ProjectCommonException.throwClientErrorException(
-          ResponseCode.invalidRequestParameter,
-          ProjectUtil.formatMessage(
-              ResponseCode.invalidRequestParameter.getErrorMessage(), PARTICIPANTS));
+              ResponseCode.invalidRequestParameter,
+              ProjectUtil.formatMessage(
+                      ResponseCode.invalidRequestParameter.getErrorMessage(), PARTICIPANTS));
     }
     CourseBatch courseBatch = JsonUtil.convert(request, CourseBatch.class);
     courseBatch.setStatus(setCourseBatchStatus(actorMessage.getRequestContext(), (String) request.get(JsonKey.START_DATE)));
     String courseId = (String) request.get(JsonKey.COURSE_ID);
-    Map<String, Object> contentDetails = getContentDetails(actorMessage.getRequestContext(),courseId, headers);
+    Map<String, Object> contentDetails = getContentDetails(actorMessage.getRequestContext(), courseId, headers);
     courseBatch.setCreatedDate(ProjectUtil.getTimeStamp());
-    if(StringUtils.isBlank(courseBatch.getCreatedBy()))
-    	courseBatch.setCreatedBy(requestedBy);
+    String primaryCategory = (String) contentDetails.getOrDefault(JsonKey.PRIMARYCATEGORY, "");
+    if (StringUtils.isBlank(courseBatch.getCreatedBy()))
+      courseBatch.setCreatedBy(requestedBy);
     validateContentOrg(actorMessage.getRequestContext(), courseBatch.getCreatedFor());
     validateMentors(courseBatch, (String) actorMessage.getContext().getOrDefault(JsonKey.X_AUTH_TOKEN, ""), actorMessage.getRequestContext());
     courseBatch.setBatchId(courseBatchId);
+    if (primaryCategory.equalsIgnoreCase(JsonKey.PRIMARY_CATEGORY_BLENDED_PROGRAM) && courseBatch.getBatchAttributes().get(JsonKey.CURRENT_BATCH_SIZE) == null) {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.currentBatchSizeMissing, ResponseCode.currentBatchSizeMissing.getErrorMessage());
+    }
     Response result = courseBatchDao.create(actorMessage.getRequestContext(), courseBatch);
     result.put(JsonKey.BATCH_ID, courseBatchId);
 
     Map<String, Object> esCourseMap = CourseBatchUtil.esCourseMapping(courseBatch, dateFormat);
     CourseBatchUtil.syncCourseBatchForeground(actorMessage.getRequestContext(),
-        courseBatchId, esCourseMap);
+            courseBatchId, esCourseMap);
     sender().tell(result, self());
-
     targetObject =
-        TelemetryUtil.generateTargetObject(
-            courseBatchId, TelemetryEnvKey.BATCH, JsonKey.CREATE, null);
+            TelemetryUtil.generateTargetObject(
+                    courseBatchId, TelemetryEnvKey.BATCH, JsonKey.CREATE, null);
     TelemetryUtil.generateCorrelatedObject(
-        (String) request.get(JsonKey.COURSE_ID), JsonKey.COURSE, null, correlatedObject);
+            (String) request.get(JsonKey.COURSE_ID), JsonKey.COURSE, null, correlatedObject);
 
     Map<String, String> rollUp = new HashMap<>();
     rollUp.put("l1", (String) request.get(JsonKey.COURSE_ID));
     TelemetryUtil.addTargetObjectRollUp(rollUp, targetObject);
     TelemetryUtil.telemetryProcessingCall(request, targetObject, correlatedObject, actorMessage.getContext());
-
-  //  updateBatchCount(courseBatch);
-      updateCollection(actorMessage.getRequestContext(), esCourseMap, contentDetails);
+    //  updateBatchCount(courseBatch);
+    updateCollection(actorMessage.getRequestContext(), esCourseMap, contentDetails);
     if (courseNotificationActive()) {
       batchOperationNotifier(actorMessage, courseBatch, null);
     }
@@ -144,8 +147,8 @@ public class CourseBatchManagementActor extends BaseActor {
 
   private boolean courseNotificationActive() {
     return Boolean.parseBoolean(
-        PropertiesCache.getInstance()
-            .getProperty(JsonKey.SUNBIRD_COURSE_BATCH_NOTIFICATIONS_ENABLED));
+            PropertiesCache.getInstance()
+                    .getProperty(JsonKey.SUNBIRD_COURSE_BATCH_NOTIFICATIONS_ENABLED));
   }
 
   private void batchOperationNotifier(Request actorMessage, CourseBatch courseBatch, Map<String, Object> participantMentorMap) {
@@ -157,13 +160,13 @@ public class CourseBatchManagementActor extends BaseActor {
     if (participantMentorMap != null) {
       batchNotificationMap.put(JsonKey.UPDATE, true);
       batchNotificationMap.put(
-          JsonKey.ADDED_MENTORS, participantMentorMap.get(JsonKey.ADDED_MENTORS));
+              JsonKey.ADDED_MENTORS, participantMentorMap.get(JsonKey.ADDED_MENTORS));
       batchNotificationMap.put(
-          JsonKey.REMOVED_MENTORS, participantMentorMap.get(JsonKey.REMOVED_MENTORS));
+              JsonKey.REMOVED_MENTORS, participantMentorMap.get(JsonKey.REMOVED_MENTORS));
       batchNotificationMap.put(
-          JsonKey.ADDED_PARTICIPANTS, participantMentorMap.get(JsonKey.ADDED_PARTICIPANTS));
+              JsonKey.ADDED_PARTICIPANTS, participantMentorMap.get(JsonKey.ADDED_PARTICIPANTS));
       batchNotificationMap.put(
-          JsonKey.REMOVED_PARTICIPANTS, participantMentorMap.get(JsonKey.REMOVED_PARTICIPANTS));
+              JsonKey.REMOVED_PARTICIPANTS, participantMentorMap.get(JsonKey.REMOVED_PARTICIPANTS));
 
     } else {
       batchNotificationMap.put(JsonKey.OPERATION_TYPE, JsonKey.ADD);
@@ -187,26 +190,27 @@ public class CourseBatchManagementActor extends BaseActor {
     Map<String, Object> request = actorMessage.getRequest();
     if (Util.isNotNull(request.get(JsonKey.PARTICIPANTS))) {
       ProjectCommonException.throwClientErrorException(
-          ResponseCode.invalidRequestParameter,
-          ProjectUtil.formatMessage(
-              ResponseCode.invalidRequestParameter.getErrorMessage(), PARTICIPANTS));
+              ResponseCode.invalidRequestParameter,
+              ProjectUtil.formatMessage(
+                      ResponseCode.invalidRequestParameter.getErrorMessage(), PARTICIPANTS));
     }
     String batchId =
-        request.containsKey(JsonKey.BATCH_ID)
-            ? (String) request.get(JsonKey.BATCH_ID)
-            : (String) request.get(JsonKey.ID);
+            request.containsKey(JsonKey.BATCH_ID)
+                    ? (String) request.get(JsonKey.BATCH_ID)
+                    : (String) request.get(JsonKey.ID);
     CourseBatch oldBatch =
-        courseBatchDao.readById((String) request.get(JsonKey.COURSE_ID), batchId, actorMessage.getRequestContext());
+            courseBatchDao.readById((String) request.get(JsonKey.COURSE_ID), batchId, actorMessage.getRequestContext());
     CourseBatch courseBatch = getUpdateCourseBatch(actorMessage.getRequestContext(), request, oldBatch);
     courseBatch.setUpdatedDate(ProjectUtil.getTimeStamp());
-    Map<String, Object> contentDetails = getContentDetails(actorMessage.getRequestContext(),courseBatch.getCourseId(), headers);
+    Map<String, Object> contentDetails = getContentDetails(actorMessage.getRequestContext(), courseBatch.getCourseId(), headers);
     validateUserPermission(courseBatch, requestedBy);
     validateContentOrg(actorMessage.getRequestContext(), courseBatch.getCreatedFor());
     validateMentors(courseBatch, (String) actorMessage.getContext().getOrDefault(JsonKey.X_AUTH_TOKEN, ""), actorMessage.getRequestContext());
+    String primaryCategory = (String) contentDetails.getOrDefault(JsonKey.PRIMARYCATEGORY, "");
     participantsMap = getMentorLists(participantsMap, oldBatch, courseBatch);
     Map<String, Object> courseBatchMap = CourseBatchUtil.cassandraCourseMapping(courseBatch, dateFormat);
     Response result =
-        courseBatchDao.update(actorMessage.getRequestContext(), (String) request.get(JsonKey.COURSE_ID), batchId, courseBatchMap);
+            courseBatchDao.update(actorMessage.getRequestContext(), (String) request.get(JsonKey.COURSE_ID), batchId, courseBatchMap);
     CourseBatch updatedCourseObject = mapESFieldsToObject(courseBatch);
     sender().tell(result, self());
     Map<String, Object> esCourseMap = CourseBatchUtil.esCourseMapping(updatedCourseObject, dateFormat);
@@ -214,7 +218,7 @@ public class CourseBatchManagementActor extends BaseActor {
     CourseBatchUtil.syncCourseBatchForeground(actorMessage.getRequestContext(), batchId, esCourseMap);
 
     targetObject =
-        TelemetryUtil.generateTargetObject(batchId, TelemetryEnvKey.BATCH, JsonKey.UPDATE, null);
+            TelemetryUtil.generateTargetObject(batchId, TelemetryEnvKey.BATCH, JsonKey.UPDATE, null);
 
     Map<String, String> rollUp = new HashMap<>();
     rollUp.put("l1", courseBatch.getCourseId());
@@ -592,7 +596,7 @@ public class CourseBatchManagementActor extends BaseActor {
   }
 
   private Map<String, Object> getContentDetails(RequestContext requestContext, String courseId, Map<String, String> headers) {
-    Map<String, Object> ekStepContent = ContentUtil.getContent(courseId, Arrays.asList("status", "batches", "leafNodesCount"));
+    Map<String, Object> ekStepContent = ContentUtil.getContent(courseId, Arrays.asList("status", "batches", "leafNodesCount", "primaryCategory"));
     logger.info(requestContext, "CourseBatchManagementActor:getEkStepContent: courseId: " + courseId, null,
             ekStepContent);
     String status = (String) ((Map<String, Object>)ekStepContent.getOrDefault("content", new HashMap<>())).getOrDefault("status", "");
@@ -651,6 +655,17 @@ public class CourseBatchManagementActor extends BaseActor {
                               certificateTemplates.put(
                                       cert_template.getKey(), mapToObject((Map<String, Object>) cert_template.getValue())));
       courseBatch.setCertTemplates(certificateTemplates);
+    }
+    Map<String, Object> batchAttributes = courseBatch.getBatchAttributes();
+    if(MapUtils.isNotEmpty(batchAttributes)) {
+      batchAttributes
+              .entrySet()
+              .stream()
+              .forEach(
+                      batchAttribute ->
+                              batchAttributes.put(
+                                      batchAttribute.getKey(), mapToObject((Map<String, Object>) batchAttribute.getValue())));
+      courseBatch.setBatchAttributes(batchAttributes);
     }
     return courseBatch;
   }

@@ -460,6 +460,7 @@ public interface ResponseMessage {
     String MISSING_FIXED_BATCH_ID = "Missing Fixed Batch Id.";
     String CANNOT_UPDATE_EVENT_SET_HAVING_ENROLLMENTS = "Cannot update event set having enrollments.";
     String USER_DOES_NOT_HAVE_ACCESS = "User doesn't have access to this Course Id";
+    String CURRENT_BATCH_SIZE_PARAMETER = "currentBatchSize param missing in request. Please check the incoming request";
   }
 
   interface Key {
@@ -848,5 +849,6 @@ public interface ResponseMessage {
     String MISSING_FIXED_BATCH_ID = "MISSING_FIXED_BATCH_ID";
     String CANNOT_UPDATE_EVENT_SET_HAVING_ENROLLMENTS = "CANNOT_UPDATE_EVENT_SET_HAVING_ENROLLMENTS";
     String USER_DOES_NOT_HAVE_ACCESS = "USER_DOES_NOT_HAVE_ACCESS";
+    String CURRENT_BATCH_SIZE_MISSING =  "CURRENT_BATCH_SIZE_MISSING";
   }
 }

@@ -1078,5 +1078,10 @@ public final class JsonKey {
   public static final String CURRENT_OFFSET = "currentOffSet";
   public static final String SECURE_SETTINGS = "secureSettings";
   public static final String X_AUTH_USER_ORG_ID = "x-authenticated-user-orgid";
-  private JsonKey() {}
+  public static final String CURRENT_BATCH_SIZE = "currentBatchSize";
+  public static final String PRIMARYCATEGORY = "primaryCategory";
+  public static final String PRIMARY_CATEGORY_BLENDED_PROGRAM = "Blended Program";
+
+
+    private JsonKey() {}
 }
