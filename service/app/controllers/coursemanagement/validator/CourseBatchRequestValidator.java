@@ -202,7 +202,7 @@ public class CourseBatchRequestValidator extends BaseRequestValidator {
           ResponseCode.dateFormatError.getErrorMessage(),
           ResponseCode.CLIENT_ERROR.getResponseCode());
     }
-    if (!courseBatchEnrolLessDateEnabled() && StringUtils.isNotEmpty(enrollmentEndDate)
+    if (courseBatchEnrolLessDateEnabled() && StringUtils.isNotEmpty(enrollmentEndDate)
         && batchStartDate.getTime() > batchenrollmentEndDate.getTime()) {
       throw new ProjectCommonException(
           ResponseCode.enrollmentEndDateStartError.getErrorCode(),
