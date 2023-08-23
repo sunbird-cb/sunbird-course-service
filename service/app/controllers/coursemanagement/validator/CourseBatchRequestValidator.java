@@ -13,6 +13,7 @@ import org.sunbird.common.exception.ProjectCommonException;
 import org.sunbird.common.models.util.JsonKey;
 import org.sunbird.common.models.util.ProjectLogger;
 import org.sunbird.common.models.util.ProjectUtil;
+import org.sunbird.common.models.util.PropertiesCache;
 import org.sunbird.common.request.BaseRequestValidator;
 import org.sunbird.common.request.Request;
 import org.sunbird.common.responsecode.ResponseCode;
@@ -171,7 +172,7 @@ public class CourseBatchRequestValidator extends BaseRequestValidator {
           ResponseCode.dateFormatError.getErrorMessage(),
           ResponseCode.CLIENT_ERROR.getResponseCode());
     }
-    if (StringUtils.isNotEmpty(endDate) && batchStartDate.getTime() >= batchEndDate.getTime()) {
+    if (StringUtils.isNotEmpty(endDate) && batchStartDate.getTime() > batchEndDate.getTime()) {
       throw new ProjectCommonException(
           ResponseCode.endDateError.getErrorCode(),
           ResponseCode.endDateError.getErrorMessage(),
@@ -201,7 +202,7 @@ public class CourseBatchRequestValidator extends BaseRequestValidator {
           ResponseCode.dateFormatError.getErrorMessage(),
           ResponseCode.CLIENT_ERROR.getResponseCode());
     }
-    if (StringUtils.isNotEmpty(enrollmentEndDate)
+    if (courseBatchEnrolLessDateEnabled() && StringUtils.isNotEmpty(enrollmentEndDate)
         && batchStartDate.getTime() > batchenrollmentEndDate.getTime()) {
       throw new ProjectCommonException(
           ResponseCode.enrollmentEndDateStartError.getErrorCode(),
@@ -338,5 +339,11 @@ public class CourseBatchRequestValidator extends BaseRequestValidator {
             (String) ((Map<String, Object>)request.getRequest().get(JsonKey.BATCH)).get(JsonKey.BATCH_ID),
             ResponseCode.mandatoryParamsMissing,
             JsonKey.BATCH_ID);
+  }
+
+  private static boolean courseBatchEnrolLessDateEnabled() {
+    return Boolean.parseBoolean(
+            PropertiesCache.getInstance()
+                    .getProperty(JsonKey.COURSE_BATCH_ENROLL_END_DATE_LESS));
   }
 }
