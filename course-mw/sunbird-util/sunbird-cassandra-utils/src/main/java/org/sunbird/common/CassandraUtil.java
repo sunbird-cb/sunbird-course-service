@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.sunbird.cassandraannotation.ClusteringKey;
 import org.sunbird.cassandraannotation.PartitioningKey;
 import org.sunbird.common.exception.ProjectCommonException;
@@ -346,5 +349,13 @@ public final class CassandraUtil {
     Map<String, Object> newMap = new HashMap<>();
     map.entrySet().forEach(entry -> newMap.put(propertiesCache.readPropertyValue(entry.getKey()), entry.getValue()));
     return newMap;
+  }
+
+  public static void convertMaptoJsonString(Map<String, Object> map, String field) {
+    try {
+      map.put(field, (new ObjectMapper()).writeValueAsString(map.get(field)));
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
