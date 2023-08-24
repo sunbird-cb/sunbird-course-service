@@ -44,6 +44,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     var userCoursesDao: UserCoursesDao = new UserCoursesDaoImpl()
     var batchUserDao  : BatchUserDao   = new BatchUserDaoImpl()
     var groupDao: GroupDaoImpl = new GroupDaoImpl()
+    val isRetiredCoursesIncludedInEnrolList = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("enrolment_list_include_retired_courses")))
+        (ProjectUtil.getConfigValue("enrolment_list_include_retired_courses")).toBoolean else false
     val isCacheEnabled = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")))
         (ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")).toBoolean else true
     val ttl: Int = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_ttl")))
@@ -140,9 +142,13 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def getActiveEnrollments(userId: String, courseIdList: java.util.List[String], requestContext: RequestContext): java.util.List[java.util.Map[String, AnyRef]] = {
         val enrolments: java.util.List[java.util.Map[String, AnyRef]] = userCoursesDao.listEnrolments(requestContext, userId, courseIdList);
-        if (CollectionUtils.isNotEmpty(enrolments))
-            enrolments.filter(e => e.getOrDefault(JsonKey.ACTIVE, false.asInstanceOf[AnyRef]).asInstanceOf[Boolean]).toList.asJava
-        else
+        if (CollectionUtils.isNotEmpty(enrolments)) {
+            if (isRetiredCoursesIncludedInEnrolList) {
+                enrolments.toList.asJava
+            } else {
+                enrolments.filter(e => e.getOrDefault(JsonKey.ACTIVE, false.asInstanceOf[AnyRef]).asInstanceOf[Boolean]).toList.asJava
+            }
+        } else
             new util.ArrayList[java.util.Map[String, AnyRef]]()
     }
 
@@ -169,9 +175,16 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
 
     def prepareSearchRequest(courseIds: java.util.List[String], request: Request, flag:Boolean): String = {
+        val status: util.List[String] = new util.ArrayList[String]()
+        if (isRetiredCoursesIncludedInEnrolList) {
+            status.add("Live")
+            status.add("Retired")
+        } else {
+            status.add("Live")
+        }
         val filters: java.util.Map[String, AnyRef] = new java.util.HashMap[String, AnyRef]() {{
             put(JsonKey.IDENTIFIER, courseIds)
-            put(JsonKey.STATUS, "Live")
+            put(JsonKey.STATUS, status)
             put(JsonKey.MIME_TYPE, JsonKey.COLLECTION_MIME_TYPE)
             put(JsonKey.TRACKABLE_ENABLED, JsonKey.YES)
             putAll(request.getRequest.getOrDefault(JsonKey.FILTERS, new java.util.HashMap[String, AnyRef]).asInstanceOf[java.util.Map[String, AnyRef]])
