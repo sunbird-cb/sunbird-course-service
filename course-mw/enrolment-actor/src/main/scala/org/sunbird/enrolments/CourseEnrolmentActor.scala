@@ -44,8 +44,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     var userCoursesDao: UserCoursesDao = new UserCoursesDaoImpl()
     var batchUserDao  : BatchUserDao   = new BatchUserDaoImpl()
     var groupDao: GroupDaoImpl = new GroupDaoImpl()
-    val isAllEnrolemts = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("is_all_enrolments")))
-        (ProjectUtil.getConfigValue("is_all_enrolments")).toBoolean else false
+    val isRetiredCoursesIncludedInEnrolList = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("enrolment_list_include_retired_courses")))
+        (ProjectUtil.getConfigValue("enrolment_list_include_retired_courses")).toBoolean else false
     val isCacheEnabled = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")))
         (ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")).toBoolean else true
     val ttl: Int = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_ttl")))
@@ -142,10 +142,12 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def getActiveEnrollments(userId: String, courseIdList: java.util.List[String], requestContext: RequestContext): java.util.List[java.util.Map[String, AnyRef]] = {
         val enrolments: java.util.List[java.util.Map[String, AnyRef]] = userCoursesDao.listEnrolments(requestContext, userId, courseIdList);
-        if (CollectionUtils.isNotEmpty(enrolments) && isAllEnrolemts == false) {
-            enrolments.filter(e => e.getOrDefault(JsonKey.ACTIVE, false.asInstanceOf[AnyRef]).asInstanceOf[Boolean]).toList.asJava
-        } else if (CollectionUtils.isNotEmpty(enrolments) && isAllEnrolemts == true) {
-            enrolments.toList.asJava
+        if (CollectionUtils.isNotEmpty(enrolments)) {
+            if (isRetiredCoursesIncludedInEnrolList) {
+                enrolments.toList.asJava
+            } else {
+                enrolments.filter(e => e.getOrDefault(JsonKey.ACTIVE, false.asInstanceOf[AnyRef]).asInstanceOf[Boolean]).toList.asJava
+            }
         } else
             new util.ArrayList[java.util.Map[String, AnyRef]]()
     }
