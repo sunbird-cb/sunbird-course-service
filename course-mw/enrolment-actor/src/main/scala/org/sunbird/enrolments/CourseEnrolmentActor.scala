@@ -176,7 +176,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def prepareSearchRequest(courseIds: java.util.List[String], request: Request, flag:Boolean): String = {
         val status: util.List[String] = new util.ArrayList[String]()
-        if(isAllEnrolemts == true) {
+        if(isRetiredCoursesIncludedInEnrolList) {
             status.add("Live")
             status.add("Retired")
         } else {
