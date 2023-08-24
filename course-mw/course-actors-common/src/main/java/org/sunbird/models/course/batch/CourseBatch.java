@@ -2,6 +2,9 @@ package org.sunbird.models.course.batch;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -223,4 +226,13 @@ public class CourseBatch implements Serializable {
     this.batchAttributes = batchAttributes;
   }
 
+  public void setBatchAttributes(String batchAttributesStr) {
+    try {
+      this.batchAttributes = (new ObjectMapper()).readValue(batchAttributesStr,
+          new TypeReference<Map<String, Object>>() {
+          });
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 }
