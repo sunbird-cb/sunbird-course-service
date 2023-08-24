@@ -143,10 +143,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     def getActiveEnrollments(userId: String, courseIdList: java.util.List[String], requestContext: RequestContext): java.util.List[java.util.Map[String, AnyRef]] = {
         val enrolments: java.util.List[java.util.Map[String, AnyRef]] = userCoursesDao.listEnrolments(requestContext, userId, courseIdList);
         if (CollectionUtils.isNotEmpty(enrolments) && isAllEnrolemts == false) {
-            logger.info(requestContext, "wrong execution :" + enrolments.filter(e => e.getOrDefault(JsonKey.ACTIVE, false.asInstanceOf[AnyRef]).asInstanceOf[Boolean]).toList.asJava)
             enrolments.filter(e => e.getOrDefault(JsonKey.ACTIVE, false.asInstanceOf[AnyRef]).asInstanceOf[Boolean]).toList.asJava
         } else if (CollectionUtils.isNotEmpty(enrolments) && isAllEnrolemts == true) {
-            logger.info(requestContext, "correct execution :" + enrolments.toList.asJava)
             enrolments.toList.asJava
         } else
             new util.ArrayList[java.util.Map[String, AnyRef]]()
