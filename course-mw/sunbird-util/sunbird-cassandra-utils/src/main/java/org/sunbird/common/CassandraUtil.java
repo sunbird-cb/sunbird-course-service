@@ -353,8 +353,11 @@ public final class CassandraUtil {
 
   public static void convertMaptoJsonString(Map<String, Object> map, String field) {
     try {
-      map.put(field, (new ObjectMapper()).writeValueAsString(map.get(field)));
+      if (map.containsKey(field)) {
+        map.put(field, (new ObjectMapper()).writeValueAsString(map.get(field)));
+      }
     } catch (JsonProcessingException e) {
+      logger.error(null,"Exception occurred - convertMaptoJsonString", e);
       throw new RuntimeException(e);
     }
   }
