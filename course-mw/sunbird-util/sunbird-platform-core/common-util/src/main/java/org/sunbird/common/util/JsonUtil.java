@@ -36,4 +36,9 @@ public class JsonUtil {
 		mapperWithDateFormat.setDateFormat(dateFormat);
 		return mapperWithDateFormat.convertValue(value, clazz);
 	}
+
+	public static <T> T convertFromString(Object value, Class<T> clazz) throws Exception {
+		String strValue = mapper.writeValueAsString(value);
+		return deserialize(strValue, clazz);
+	}
 }

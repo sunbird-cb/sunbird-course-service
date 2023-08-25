@@ -106,7 +106,7 @@ public class CourseBatchManagementActor extends BaseActor {
           ProjectUtil.formatMessage(
               ResponseCode.invalidRequestParameter.getErrorMessage(), PARTICIPANTS));
     }
-    CourseBatch courseBatch = JsonUtil.convert(request, CourseBatch.class);
+    CourseBatch courseBatch = JsonUtil.convertFromString(request, CourseBatch.class);
     courseBatch.setStatus(setCourseBatchStatus(actorMessage.getRequestContext(), (String) request.get(JsonKey.START_DATE)));
     String courseId = (String) request.get(JsonKey.COURSE_ID);
     Map<String, Object> contentDetails = getContentDetails(actorMessage.getRequestContext(),courseId, headers);
