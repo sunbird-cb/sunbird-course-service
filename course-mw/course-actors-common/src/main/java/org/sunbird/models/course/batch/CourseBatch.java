@@ -222,15 +222,15 @@ public class CourseBatch implements Serializable {
     return batchAttributes;
   }
 
-  public void setBatchAttributes(Map<String, Object> batchAttributes) {
-    this.batchAttributes = batchAttributes;
-  }
-
-  public void setBatchAttributes(String batchAttributesStr) {
+  public void setBatchAttributes(Object batchAttributesObj) {
     try {
-      this.batchAttributes = (new ObjectMapper()).readValue(batchAttributesStr,
+      if(batchAttributesObj instanceof String) {
+      this.batchAttributes = (new ObjectMapper()).readValue((String) batchAttributesObj,
           new TypeReference<Map<String, Object>>() {
           });
+      } else if (batchAttributesObj instanceof Map) {
+        this.batchAttributes = (Map<String,Object>) batchAttributesObj;
+      }
     } catch (Exception e) {
       e.printStackTrace();
     }
