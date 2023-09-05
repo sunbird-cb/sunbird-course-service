@@ -124,7 +124,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                     val userAssessments = updateAssessEventUserid(input._2, requestedBy, requestedFor)
                     userAssessments.foreach(assessments => {
                         val userId = assessments._1
-                        if(!isAdminApi && validUserIds.contains(userId)){
+                        if(isAdminApi || validUserIds.contains(userId)){
                             assessments._2.foreach(assessment => {
                                 syncAssessmentData(assessment)
                                 responseMessage.put(batchId, JsonKey.SUCCESS)
@@ -169,7 +169,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                     val userContents = getDataGroupedByUserId(input._2, requestedBy, requestedFor)
                     userContents.foreach(entry => {
                         val userId = entry._1
-                        if(!isAdminApi && validUserIds.contains(userId)) {
+                        if(isAdminApi || validUserIds.contains(userId)) {
                             val courseId = if (entry._2.head.containsKey(JsonKey.COURSE_ID)) entry._2.head.getOrDefault(JsonKey.COURSE_ID, "").asInstanceOf[String] else entry._2.head.getOrDefault(JsonKey.COLLECTION_ID, "").asInstanceOf[String]
                             if(entry._2.head.containsKey(JsonKey.COLLECTION_ID)) entry._2.head.remove(JsonKey.COLLECTION_ID)
                             val contentIds = entry._2.map(e => e.getOrDefault(JsonKey.CONTENT_ID, "").asInstanceOf[String]).distinct.asJava
