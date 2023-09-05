@@ -148,17 +148,16 @@ public class LearnerController extends BaseController {
     JsonNode requestData = httpRequest.body().asJson();
     String loggingHeaders =  httpRequest.attrs().getOptional(Attrs.X_LOGGING_HEADERS).orElse(null);
     String requestedBy = httpRequest.attrs().getOptional(Attrs.USER_ID).orElse(null);
-    String requestedFor = httpRequest.attrs().getOptional(Attrs.REQUESTED_FOR).orElse(null);
-    String apiDebugLog = "UpdateContentState Request: " + requestData.toString() + " RequestedBy: " + requestedBy + " RequestedFor: " + requestedFor + " ";
-      try {
+    String apiDebugLog = "UpdateContentState Request: " + requestData.toString() + " RequestedBy: " + requestedBy;
+    try {
       Request reqObj = (Request) mapper.RequestMapper.mapRequest(requestData, Request.class);
+      String requestedFor = (String) reqObj.getRequest().getOrDefault(JsonKey.USER_ID, null);
       RequestValidator.validateUpdateContent(reqObj);
       reqObj = transformUserId(reqObj);
       reqObj.setOperation("updateConsumption");
       reqObj.setRequestId(httpRequest.attrs().getOptional(Attrs.REQUEST_ID).orElse(null));
       reqObj.setEnv(getEnvironment());
       HashMap<String, Object> innerMap = new HashMap<>();
-      innerMap.put(JsonKey.IS_ADMIN_API, true);
       innerMap.put(JsonKey.REQUESTED_BY, requestedBy);
       if (StringUtils.isNotBlank(requestedFor))
         innerMap.put(SunbirdKey.REQUESTED_FOR, requestedFor);

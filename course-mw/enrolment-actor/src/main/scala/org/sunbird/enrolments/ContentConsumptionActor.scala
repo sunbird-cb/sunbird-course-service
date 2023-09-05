@@ -51,8 +51,6 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
     }
 
     def updateConsumption(request: Request): Unit = {
-        val isAdminApi = request.getOrDefault(JsonKey.IS_ADMIN_API, false).asInstanceOf[Boolean]
-        logger.info(request.getRequestContext, "ContentConsumptionActor:: updateConsumption... isAdminApi ? " + isAdminApi)
         val requestBy = request.get(JsonKey.REQUESTED_BY).asInstanceOf[String]
         val requestedFor = request.get(JsonKey.REQUESTED_FOR).asInstanceOf[String]
         val assessmentEvents = request.getRequest.getOrDefault(JsonKey.ASSESSMENT_EVENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]]
@@ -79,8 +77,8 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
             } else contentList
             logger.info(requestContext, "Final content-consumption data: " + finalContentList)
             // Update consumption first and then push the assessment events if there are any. This will help us handling failures of max attempts (for assessment content).
-            val contentConsumptionResponse = processContents(finalContentList, requestContext, requestBy, requestedFor, isAdminApi)
-            val assessmentResponse = processAssessments(assessmentEvents, requestContext, requestBy, requestedFor, isAdminApi)
+            val contentConsumptionResponse = processContents(finalContentList, requestContext, requestBy, requestedFor)
+            val assessmentResponse = processAssessments(assessmentEvents, requestContext, requestBy, requestedFor)
             val finalResponse = assessmentResponse.getOrElse(new Response())
             finalResponse.putAll(contentConsumptionResponse.getOrElse(new Response()).getResult)
             sender().tell(finalResponse, self)
@@ -107,7 +105,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
         updatedData.toList.groupBy(d => d.get(JsonKey.USER_ID).asInstanceOf[String])
     }
 
-    def processAssessments(assessmentEvents: java.util.List[java.util.Map[String, AnyRef]], requestContext: RequestContext, requestedBy: String, requestedFor: String, isAdminApi: Boolean): Option[Response] = {
+    def processAssessments(assessmentEvents: java.util.List[java.util.Map[String, AnyRef]], requestContext: RequestContext, requestedBy: String, requestedFor: String): Option[Response] = {
         if(CollectionUtils.isNotEmpty(assessmentEvents)) {
             val batchAssessmentList: Map[String, List[java.util.Map[String, AnyRef]]] = assessmentEvents.filter(event => StringUtils.isNotBlank(event.getOrDefault(JsonKey.BATCH_ID, "").asInstanceOf[String])).toList.groupBy(event => event.get(JsonKey.BATCH_ID).asInstanceOf[String])
             val batchIds = batchAssessmentList.keySet.toList.asJava
@@ -124,7 +122,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                     val userAssessments = updateAssessEventUserid(input._2, requestedBy, requestedFor)
                     userAssessments.foreach(assessments => {
                         val userId = assessments._1
-                        if(isAdminApi || validUserIds.contains(userId)){
+                        if(validUserIds.contains(userId)){
                             assessments._2.foreach(assessment => {
                                 syncAssessmentData(assessment)
                                 responseMessage.put(batchId, JsonKey.SUCCESS)
@@ -152,7 +150,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
         } else None
     }
 
-    def processContents(contentList: java.util.List[java.util.Map[String, AnyRef]], requestContext: RequestContext, requestedBy: String, requestedFor: String, isAdminApi: Boolean): Option[Response] = {
+    def processContents(contentList: java.util.List[java.util.Map[String, AnyRef]], requestContext: RequestContext, requestedBy: String, requestedFor: String): Option[Response] = {
         if(CollectionUtils.isNotEmpty(contentList)) {
             val batchContentList: Map[String, List[java.util.Map[String, AnyRef]]] = contentList.filter(event => StringUtils.isNotBlank(event.getOrDefault(JsonKey.BATCH_ID, "").asInstanceOf[String])).toList.groupBy(event => event.get(JsonKey.BATCH_ID).asInstanceOf[String])
             val batchIds = batchContentList.keySet.toList.asJava
@@ -169,7 +167,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                     val userContents = getDataGroupedByUserId(input._2, requestedBy, requestedFor)
                     userContents.foreach(entry => {
                         val userId = entry._1
-                        if(isAdminApi || validUserIds.contains(userId)) {
+                        if(validUserIds.contains(userId)) {
                             val courseId = if (entry._2.head.containsKey(JsonKey.COURSE_ID)) entry._2.head.getOrDefault(JsonKey.COURSE_ID, "").asInstanceOf[String] else entry._2.head.getOrDefault(JsonKey.COLLECTION_ID, "").asInstanceOf[String]
                             if(entry._2.head.containsKey(JsonKey.COLLECTION_ID)) entry._2.head.remove(JsonKey.COLLECTION_ID)
                             val contentIds = entry._2.map(e => e.getOrDefault(JsonKey.CONTENT_ID, "").asInstanceOf[String]).distinct.asJava
