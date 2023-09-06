@@ -11,6 +11,7 @@ import java.util.Map;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.base.BaseActor;
+import org.sunbird.common.CassandraUtil;
 import org.sunbird.common.exception.ProjectCommonException;
 import org.sunbird.common.models.response.Response;
 import org.sunbird.common.models.util.JsonKey;
@@ -61,10 +62,8 @@ public class CourseBatchCertificateActor extends BaseActor {
     logger.info(request.getRequestContext(), "Validated certificate template to batchID: " +  batchId);
     courseBatchDao.addCertificateTemplateToCourseBatch(request.getRequestContext(), courseId, batchId, templateId, template);
     logger.info(request.getRequestContext(), "Added certificate template to batchID: " +  batchId);
-    //Map<String, Object> courseBatch =
-    //    mapESFieldsToObject(courseBatchDao.getCourseBatch(request.getRequestContext(), courseId, batchId));
     Map<String, Object> courseBatch =
-            mapESFieldsToObject(mapper.convertValue(courseBatchDao.readById((String) request.get(JsonKey.COURSE_ID), batchId, request.getRequestContext()), Map.class));
+        mapESFieldsToObject(CassandraUtil.convertStringToMap(courseBatchDao.getCourseBatch(request.getRequestContext(), courseId, batchId),"batchAttributes"));
     CourseBatchUtil.syncCourseBatchForeground(request.getRequestContext(), batchId, courseBatch);
     logger.info(request.getRequestContext(), "Synced to es certificate template to batchID: " +  batchId);
     Response response = new Response();
