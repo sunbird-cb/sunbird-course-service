@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.sunbird.cassandraannotation.ClusteringKey;
 import org.sunbird.cassandraannotation.PartitioningKey;
 import org.sunbird.common.exception.ProjectCommonException;
@@ -38,6 +39,7 @@ public final class CassandraUtil {
       CassandraPropertyReader.getInstance();
   private static final String SERIAL_VERSION_UID = "serialVersionUID";
   protected static LoggerUtil logger = new LoggerUtil(CassandraUtil.class);
+  private static ObjectMapper mapper = new ObjectMapper();
 
   private CassandraUtil() {}
 
@@ -354,11 +356,23 @@ public final class CassandraUtil {
   public static void convertMaptoJsonString(Map<String, Object> map, String field) {
     try {
       if (map.containsKey(field)) {
-        map.put(field, (new ObjectMapper()).writeValueAsString(map.get(field)));
+        map.put(field, mapper.writeValueAsString(map.get(field)));
       }
     } catch (JsonProcessingException e) {
       logger.error(null,"Exception occurred - convertMaptoJsonString", e);
       throw new RuntimeException(e);
     }
+  }
+
+  public static Map<String, Object> convertStringToMap(Map<String, Object> map, String field) {
+    String val = (String) map.get(field);
+    if (StringUtils.isEmpty(val))
+      return map;
+    try {
+      map.put(field, mapper.readValue(val, Map.class));
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    return map;
   }
 }
