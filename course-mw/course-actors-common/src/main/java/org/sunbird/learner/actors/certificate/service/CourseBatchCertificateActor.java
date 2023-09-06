@@ -61,8 +61,10 @@ public class CourseBatchCertificateActor extends BaseActor {
     logger.info(request.getRequestContext(), "Validated certificate template to batchID: " +  batchId);
     courseBatchDao.addCertificateTemplateToCourseBatch(request.getRequestContext(), courseId, batchId, templateId, template);
     logger.info(request.getRequestContext(), "Added certificate template to batchID: " +  batchId);
+    //Map<String, Object> courseBatch =
+    //    mapESFieldsToObject(courseBatchDao.getCourseBatch(request.getRequestContext(), courseId, batchId));
     Map<String, Object> courseBatch =
-        mapESFieldsToObject(courseBatchDao.getCourseBatch(request.getRequestContext(), courseId, batchId));
+            mapESFieldsToObject(mapper.convertValue(courseBatchDao.readById((String) request.get(JsonKey.COURSE_ID), batchId, request.getRequestContext()), Map.class));
     CourseBatchUtil.syncCourseBatchForeground(request.getRequestContext(), batchId, courseBatch);
     logger.info(request.getRequestContext(), "Synced to es certificate template to batchID: " +  batchId);
     Response response = new Response();
