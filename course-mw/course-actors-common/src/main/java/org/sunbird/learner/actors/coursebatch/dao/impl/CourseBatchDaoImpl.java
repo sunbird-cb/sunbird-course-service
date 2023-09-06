@@ -48,6 +48,7 @@ public class CourseBatchDaoImpl implements CourseBatchDao {
     attributeMap.remove(JsonKey.COURSE_ID);
     attributeMap.remove(JsonKey.BATCH_ID);
     attributeMap = CassandraUtil.changeCassandraColumnMapping(attributeMap);
+    CassandraUtil.convertMaptoJsonString(attributeMap, JsonKey.BATCH_ATTRIBUTES_KEY);
     return cassandraOperation.updateRecord(
             requestContext, courseBatchDb.getKeySpace(), courseBatchDb.getTableName(), attributeMap, primaryKey);
   }
