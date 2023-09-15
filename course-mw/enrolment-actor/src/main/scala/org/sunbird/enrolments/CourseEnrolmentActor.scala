@@ -127,7 +127,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     def list(request: Request): Unit = {
         val userId = request.get(JsonKey.USER_ID).asInstanceOf[String]
         val courseIdList = request.get(JsonKey.COURSE_IDS).asInstanceOf[java.util.List[String]]
-        logger.info(request.getRequestContext,"CourseEnrolmentActor :: list :: UserId = " + userId)
+
+        logger.info(request.getRequestContext,"CourseEnrolmentActor :: list :: UserId = " + userId+" courseId List is :"+courseIdList)
         try{
             val response = if (isCacheEnabled && request.getContext.get("cache").asInstanceOf[Boolean])
                 getCachedEnrolmentList(userId, () => getEnrolmentList(request, userId, courseIdList)) else getEnrolmentList(request, userId, courseIdList)
@@ -144,8 +145,10 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val enrolments: java.util.List[java.util.Map[String, AnyRef]] = userCoursesDao.listEnrolments(requestContext, userId, courseIdList);
         if (CollectionUtils.isNotEmpty(enrolments)) {
             if (isRetiredCoursesIncludedInEnrolList) {
+                logger.info(requestContext,"inside added condition "+" enrolment list is :"+ enrolments.toList.asJava)
                 enrolments.toList.asJava
             } else {
+                logger.info(requestContext,"inside existing condition "+" enrolment list is :"+ enrolments.filter(e => e.getOrDefault(JsonKey.ACTIVE, false.asInstanceOf[AnyRef]).asInstanceOf[Boolean]).toList.asJava)
                 enrolments.filter(e => e.getOrDefault(JsonKey.ACTIVE, false.asInstanceOf[AnyRef]).asInstanceOf[Boolean]).toList.asJava
             }
         } else
@@ -373,6 +376,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val enrolments: java.util.List[java.util.Map[String, AnyRef]] = {
             if (CollectionUtils.isNotEmpty(activeEnrolments)) {
               val allCourseIds: java.util.List[String] = activeEnrolments.map(e => e.getOrDefault(JsonKey.COURSE_ID, "").asInstanceOf[String]).distinct.filter(id => StringUtils.isNotBlank(id)).toList.asJava
+                logger.info(request.getRequestContext,"All course is list : " + allCourseIds)
                 val courseIds = new java.util.ArrayList[String]()
                 val secureCourseIds = new java.util.ArrayList[String]()
                 for (courseId <- allCourseIds.asScala) {
