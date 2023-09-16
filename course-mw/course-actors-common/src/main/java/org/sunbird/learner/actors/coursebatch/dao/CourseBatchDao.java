@@ -1,5 +1,6 @@
 package org.sunbird.learner.actors.coursebatch.dao;
 
+import java.util.List;
 import java.util.Map;
 import org.sunbird.common.models.response.Response;
 import org.sunbird.common.request.RequestContext;
@@ -62,4 +63,6 @@ public interface CourseBatchDao {
    * @param templateId
    */
   void removeCertificateTemplateFromCourseBatch(RequestContext requestContext, String courseId, String batchId, String templateId);
+
+  List<Map<String, Object>> getProgramChildrens(RequestContext requestContext, String programId);
 }

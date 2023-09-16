@@ -257,4 +257,36 @@ public class CourseEnrollmentController extends BaseController {
                 getAllRequestHeaders((httpRequest)),
                 httpRequest);
     }
+
+    public CompletionStage<Result> enrollProgram(Http.Request httpRequest) {
+        return handleRequest(courseEnrolmentActor, "enrol_v2",
+                httpRequest.body().asJson(),
+                (request) -> {
+                    Request req = (Request) request;
+                    Map<String, String[]> queryParams = new HashMap<>(httpRequest.queryString());
+                    String programId = req.getRequest().containsKey(JsonKey.PROGRAM_ID) ? JsonKey.PROGRAM_ID : JsonKey.COLLECTION_ID;
+                    req.getRequest().put(JsonKey.PROGRAM_ID, req.getRequest().get(programId));
+                    validator.validateEnrollProgram(req);
+                    return null;
+                },
+                getAllRequestHeaders(httpRequest),
+                httpRequest);
+    }
+
+    public CompletionStage<Result> unenrollProgram(Http.Request httpRequest) {
+        return handleRequest(
+                courseEnrolmentActor, "unenrol",
+                httpRequest.body().asJson(),
+                (request) -> {
+                    Request req = (Request) request;
+                    Map<String, String[]> queryParams = new HashMap<>(httpRequest.queryString());
+                    String programId = req.getRequest().containsKey(JsonKey.PROGRAM_ID) ? JsonKey.PROGRAM_ID : JsonKey.COLLECTION_ID;
+                    req.getRequest().put(JsonKey.PROGRAM_ID, req.getRequest().get(programId));
+                    validator.validateUnenrollCourse(req);
+                    return null;
+                },
+                getAllRequestHeaders(httpRequest),
+                httpRequest);
+    }
+
 }

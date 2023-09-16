@@ -22,6 +22,8 @@ POST     /v1/course/enroll	    		@controllers.courseenrollment.CourseEnrollmentC
 POST     /v1/course/unenroll             @controllers.courseenrollment.CourseEnrollmentController.unenrollCourse(request: play.mvc.Http.Request)
 POST     /v1/course/admin/enroll	    		@controllers.courseenrollment.CourseEnrollmentController.adminEnrollCourse(request: play.mvc.Http.Request)
 POST     /v1/course/admin/unenroll             @controllers.courseenrollment.CourseEnrollmentController.adminUnenrollCourse(request: play.mvc.Http.Request)
+POST     /v1/program/enroll	    		@controllers.courseenrollment.CourseEnrollmentController.enrollProgram(request: play.mvc.Http.Request)
+POST     /v1/program/unenroll             @controllers.courseenrollment.CourseEnrollmentController.unenrollProgram(request: play.mvc.Http.Request)
 POST /v1/batch/bulk/enrollment          @controllers.bulkapimanagement.BulkUploadController.batchEnrollmentBulkUpload(request: play.mvc.Http.Request)
 POST /v1/batch/bulk/unenrollment          @controllers.bulkapimanagement.BulkUploadController.batchUnEnrollmentBulkUpload(request: play.mvc.Http.Request)
 POST     /v1/content/state/read	        @controllers.LearnerController.getContentState(request: play.mvc.Http.Request)

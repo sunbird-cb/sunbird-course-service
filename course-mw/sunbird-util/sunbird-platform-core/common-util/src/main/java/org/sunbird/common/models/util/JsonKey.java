@@ -1084,6 +1084,10 @@ public final class JsonKey {
   public static final String COURSE_BATCH_ENROLL_END_DATE_LESS = "enrol_end_date_allow_lesser_value";
   public static final String BATCH_ATTRIBUTES_KEY = "batch_attributes";
   public static final String IS_ADMIN_API = "isAdminAPI";
-    
+  public static final String PROGRAM_ID = "programId";
+  public static final String ENROLL_COLLECTION_ALLOW_PRIMARY_CATEGORY = "enroll_collection_allow_primary_category";
+  public static final String PROGRAM_ENROLL_ALLOW_PRIMARY_CATEGORY = "program_enroll_allow_primary_category";
+  public static final String CONTENT_HIERARCHY_STORE_KEY_SPACE_NAME = "dev_hierarchy_store";
+  public static final String CONTENT_HIERARCHY_STORE_DB = "content_hierarchy";
   private JsonKey() {}
 }

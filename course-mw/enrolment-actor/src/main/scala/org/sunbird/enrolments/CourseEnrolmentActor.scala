@@ -14,7 +14,7 @@ import org.apache.commons.collections4.{CollectionUtils, MapUtils}
 import org.apache.commons.lang3.StringUtils
 import org.sunbird.common.exception.ProjectCommonException
 import org.sunbird.common.models.response.Response
-import org.sunbird.common.models.util.ProjectUtil.EnrolmentType
+import org.sunbird.common.models.util.ProjectUtil.{EnrolmentType, getConfigValue}
 import org.sunbird.common.models.util._
 import org.sunbird.common.request.{Request, RequestContext}
 import org.sunbird.common.responsecode.ResponseCode
@@ -72,6 +72,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             case "enrol" => enroll(request)
             case "unenrol" => unEnroll(request)
             case "listEnrol" => list(request)
+            case "enrol_v2" => enroll_v2(request)
             case _ => ProjectCommonException.throwClientErrorException(ResponseCode.invalidRequestData,
                 ResponseCode.invalidRequestData.getErrorMessage)
         }
@@ -418,6 +419,43 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             contents.get(0).asInstanceOf[java.util.Map[String, AnyRef]].getOrDefault(JsonKey.LEAF_NODE_COUNT, 0.asInstanceOf[AnyRef]).asInstanceOf[Int]
         } else 0}
         enrolmentData.setStatus(getCompletionStatus(enrolmentData.getProgress, leafNodesCount))
+    }
+
+    def enroll_v2(request: Request): Unit = {
+        val programId: String = request.get(JsonKey.PROGRAM_ID).asInstanceOf[String]
+        val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
+        val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
+        val batchData: CourseBatch = courseBatchDao.readById(programId, batchId, request.getRequestContext)
+        val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, programId, batchId)
+        val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
+        validateEnrolment(batchData, enrolmentData, true)
+        val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
+        val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, programId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
+        val contentData = ContentUtil.getContentRead_v2(programId, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+        if (contentData.size() > 0) {
+            upsertEnrollment(userId, programId, batchId, data, dataBatch, (null == enrolmentData), request.getRequestContext)
+            logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
+            cacheUtil.delete(getCacheKey(userId))
+            sender().tell(successResponse(), self)
+            generateTelemetryAudit(userId, programId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
+            notifyUser(userId, batchData, JsonKey.ADD)
+            if(util.Arrays.asList(getConfigValue(JsonKey.ENROLL_COLLECTION_ALLOW_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])) {
+                getCoursesForProgram(request.getRequestContext, programId, userId, batchId)
+            }
+        } else {
+            ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId)
+        }
+    }
+
+    def getCoursesForProgram(requestContext: RequestContext, programId: String, userId: String, batchId: String) = {
+        val contentDataForProgram: java.util.List[java.util.Map[String, AnyRef]] = courseBatchDao.getProgramChildrens(requestContext, programId)
+        for (childNode <- contentDataForProgram.asScala) {
+            val courseId: String = childNode.get(JsonKey.IDENTIFIER).asInstanceOf[String]
+            val primaryCategory: String = childNode.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]
+            if(util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOW_PRIMARY_CATEGORY).split(","): _*).contains(primaryCategory)) {
+                // TODO's Add the logic to enroll in course with courseId, userId and batchId.
+            }
+        }
     }
 }
 
