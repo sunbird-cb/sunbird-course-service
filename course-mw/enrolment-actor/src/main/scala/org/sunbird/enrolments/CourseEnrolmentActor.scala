@@ -44,8 +44,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     var userCoursesDao: UserCoursesDao = new UserCoursesDaoImpl()
     var batchUserDao  : BatchUserDao   = new BatchUserDaoImpl()
     var groupDao: GroupDaoImpl = new GroupDaoImpl()
-    val isRetiredCoursesIncludedInEnrolList = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("enrolment_list_include_retired_courses")))
-        (ProjectUtil.getConfigValue("enrolment_list_include_retired_courses")).toBoolean else false
+    var isRetiredCoursesIncludedInEnrolList = false
     val isCacheEnabled = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")))
         (ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")).toBoolean else true
     val ttl: Int = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_ttl")))
@@ -126,6 +125,13 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def list(request: Request): Unit = {
         val userId = request.get(JsonKey.USER_ID).asInstanceOf[String]
+        val urlQueryString = request.getContext.get(JsonKey.URL_QUERY_STRING).asInstanceOf[String]
+        val paramMap = urlQueryString
+          .split("&")
+          .map(_.split("="))
+          .collect { case Array(key, value) => key -> value }
+          .toMap
+        isRetiredCoursesIncludedInEnrolList = paramMap.getOrElse(JsonKey.RETIRED_COURE_ENABLED, JsonKey.FALSE).toBoolean
         val courseIdList = request.get(JsonKey.COURSE_IDS).asInstanceOf[java.util.List[String]]
         logger.info(request.getRequestContext,"CourseEnrolmentActor :: list :: UserId = " + userId)
         try{
