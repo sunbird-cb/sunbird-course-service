@@ -259,7 +259,7 @@ public class CourseEnrollmentController extends BaseController {
     }
 
     public CompletionStage<Result> enrollProgram(Http.Request httpRequest) {
-        return handleRequest(courseEnrolmentActor, "enrol_v2",
+        return handleRequest(courseEnrolmentActor, "enrolProgram",
                 httpRequest.body().asJson(),
                 (request) -> {
                     Request req = (Request) request;
