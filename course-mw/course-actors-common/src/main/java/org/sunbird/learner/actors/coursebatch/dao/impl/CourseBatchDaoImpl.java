@@ -1,11 +1,8 @@
 package org.sunbird.learner.actors.coursebatch.dao.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.sunbird.cassandra.CassandraOperation;
 import org.sunbird.common.CassandraUtil;
-import org.sunbird.common.Constants;
 import org.sunbird.common.exception.ProjectCommonException;
 import org.sunbird.common.models.response.Response;
 import org.sunbird.common.models.util.CassandraPropertyReader;
@@ -26,7 +23,6 @@ import java.util.Map;
 public class CourseBatchDaoImpl implements CourseBatchDao {
   private CassandraOperation cassandraOperation = ServiceFactory.getInstance();
   private Util.DbInfo courseBatchDb = Util.dbInfoMap.get(JsonKey.COURSE_BATCH_DB);
-  private Util.DbInfo contentHierarchyDb = Util.dbInfoMap.get(JsonKey.CONTENT_HIERARCHY_STORE_DB);
   private static final CassandraPropertyReader propertiesCache =
           CassandraPropertyReader.getInstance();
   private ObjectMapper mapper = new ObjectMapper();
