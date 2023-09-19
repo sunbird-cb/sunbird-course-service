@@ -125,22 +125,4 @@ public class CourseBatchDaoImpl implements CourseBatchDao {
         CourseJsonKey.CERTIFICATE_TEMPLATES_COLUMN,
         templateId);
   }
-
-  @Override
-  public List<Map<String, Object>> getProgramChildrens(RequestContext requestContext, String programId) {
-    Map<String, Object> primaryKey = new HashMap<>();
-    primaryKey.put(JsonKey.IDENTIFIER, programId);
-    Response programHierarchyResponse =
-            cassandraOperation.getRecordByIdentifier(
-                    requestContext, contentHierarchyDb.getKeySpace(), contentHierarchyDb.getTableName(), primaryKey, null);
-    List<Map<String, Object>> response = (List<Map<String, Object>>) programHierarchyResponse.get(Constants.RESPONSE);
-    Map<String, Object> childHierarchy = null;
-    try {
-      childHierarchy = mapper.readValue((String)response.get(0).get(JsonKey.HIERARCHY), new TypeReference<Map<String, Object>>() {});
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
-    return (List<Map<String, Object>>) childHierarchy.get(JsonKey.CHILDREN);
-  }
-
 }

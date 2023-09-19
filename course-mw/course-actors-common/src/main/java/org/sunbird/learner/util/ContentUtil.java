@@ -244,6 +244,6 @@ public final class ContentUtil {
     } catch (Exception e) {
       logger.error(null, "User don't have access to this programId " + collectionId, e);
     }
-    return null;
+    return new HashMap<>();
   }
 }

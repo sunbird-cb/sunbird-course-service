@@ -63,6 +63,4 @@ public interface CourseBatchDao {
    * @param templateId
    */
   void removeCertificateTemplateFromCourseBatch(RequestContext requestContext, String courseId, String batchId, String templateId);
-
-  List<Map<String, Object>> getProgramChildrens(RequestContext requestContext, String programId);
 }
