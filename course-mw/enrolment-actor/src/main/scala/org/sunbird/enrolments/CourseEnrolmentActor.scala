@@ -46,8 +46,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     var batchUserDao  : BatchUserDao   = new BatchUserDaoImpl()
     var groupDao: GroupDaoImpl = new GroupDaoImpl()
     var contentHierarchyDao: ContentHierarchyDaoImpl = new ContentHierarchyDaoImpl()
-    val isRetiredCoursesIncludedInEnrolList = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("enrolment_list_include_retired_courses")))
-        (ProjectUtil.getConfigValue("enrolment_list_include_retired_courses")).toBoolean else false
+    var isRetiredCoursesIncludedInEnrolList = false
     val isCacheEnabled = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")))
         (ProjectUtil.getConfigValue("user_enrolments_response_cache_enable")).toBoolean else true
     val ttl: Int = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("user_enrolments_response_cache_ttl")))
