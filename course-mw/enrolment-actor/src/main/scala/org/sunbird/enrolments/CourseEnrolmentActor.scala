@@ -425,15 +425,15 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def enrollProgram(request: Request): Unit = {
         val programId: String = request.get(JsonKey.PROGRAM_ID).asInstanceOf[String]
+        val contentData = ContentUtil.getContentReadV2(programId, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+        if (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]))
+            ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId);
         val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
         val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
         val batchData: CourseBatch = courseBatchDao.readById(programId, batchId, request.getRequestContext)
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, programId, batchId)
         val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
         validateEnrolment(batchData, enrolmentData, true)
-        val contentData = ContentUtil.getContentReadV2(programId, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
-        if (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.ENROLL_COLLECTION_ALLOW_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]))
-            ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId);
         getCoursesForProgramAndEnrol(request, programId, userId)
         val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
         val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, programId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
@@ -446,11 +446,11 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
 
     def getCoursesForProgramAndEnrol(request: Request, programId: String, userId: String) = {
-        val contentDataForProgram: java.util.List[java.util.Map[String, AnyRef]] = contentHierarchyDao.getProgramChildrens(request.getRequestContext, programId)
+        val contentDataForProgram: java.util.List[java.util.Map[String, AnyRef]] = contentHierarchyDao.getContentChildren(request.getRequestContext, programId)
         for (childNode <- contentDataForProgram.asScala) {
             val courseId: String = childNode.get(JsonKey.IDENTIFIER).asInstanceOf[String]
             val primaryCategory: String = childNode.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]
-            if(util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOW_PRIMARY_CATEGORY).split(","): _*).contains(primaryCategory)) {
+            if(util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_CHILDREN_PRIMARY_CATEGORY).split(","): _*).contains(primaryCategory)) {
                 // Enroll in course with courseId, userId and batchId.
                 request.getRequest.put(JsonKey.COURSE_ID, courseId)
                 enrollProgramCourses(request)
@@ -484,14 +484,9 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             notifyUser(userId, batchData, JsonKey.ADD)
         } catch {
             case e: ProjectCommonException =>
-                logger.error(request.getRequestContext, "Exception in upsertEnrollment list : user ::" + e.getMessage, e)
-                if (e.getMessage.equals(ResponseCode.userAlreadyEnrolledCourse.getErrorMessage))
-                    return;
-                if (e.getMessage.equals(ResponseCode.courseBatchAlreadyCompleted.getErrorMessage))
-                    return;
-                if (e.getMessage.equals(ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage))
+                if (ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage.equals(e.getMessage))
                     ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchEnrollmentDateEnded, ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage)
-                if (e.getMessage.equals(ResponseCode.userNotEnrolledCourse.getErrorMessage))
+                if (ResponseCode.userNotEnrolledCourse.getErrorMessage.equals(e.getMessage))
                     ProjectCommonException.throwClientErrorException(ResponseCode.userNotEnrolledCourse, ResponseCode.userNotEnrolledCourse.getErrorMessage)
             case e: Exception =>
                 logger.error(request.getRequestContext, "Exception in upsertEnrollment list : user ::" + e.getMessage, e)

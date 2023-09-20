@@ -7,5 +7,5 @@ import java.util.Map;
 
 public interface ContentHierarchyDao {
 
-    List<Map<String, Object>> getProgramChildrens(RequestContext requestContext, String programId);
+    List<Map<String, Object>> getContentChildren(RequestContext requestContext, String programId);
 }

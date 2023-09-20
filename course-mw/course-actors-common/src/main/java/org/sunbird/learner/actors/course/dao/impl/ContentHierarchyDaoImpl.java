@@ -23,7 +23,7 @@ public class ContentHierarchyDaoImpl implements ContentHierarchyDao {
     private ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public List<Map<String, Object>> getProgramChildrens(RequestContext requestContext, String programId) {
+    public List<Map<String, Object>> getContentChildren(RequestContext requestContext, String programId) {
         Map<String, Object> primaryKey = new HashMap<>();
         primaryKey.put(JsonKey.IDENTIFIER, programId);
         Response programHierarchyResponse =
