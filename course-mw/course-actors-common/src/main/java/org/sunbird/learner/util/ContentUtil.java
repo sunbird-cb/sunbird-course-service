@@ -226,4 +226,24 @@ public final class ContentUtil {
     }
     return flag;
   }
+  public static Map<String, Object> getContentReadV2(String collectionId, Map<String, String> allHeaders) {
+    try {
+      Map<String, String> headers = new HashMap<String, String>();
+      if (allHeaders.containsKey(JsonKey.X_AUTH_USER_ORG_ID)) {
+        headers.put(JsonKey.X_AUTH_USER_ORG_ID, allHeaders.get(JsonKey.X_AUTH_USER_ORG_ID));
+      }
+      String baseContentreadUrl = ProjectUtil.getConfigValue(JsonKey.EKSTEP_BASE_URL) + "/content/v3/read/" + collectionId + "?fields=primaryCategory,identifier,batches";
+      String response = HttpUtil.sendGetRequest(baseContentreadUrl, headers);
+      if (response != null && !response.isEmpty()) {
+        Map<String, Object> data = mapper.readValue(response, Map.class);
+        if (JsonKey.OK.equalsIgnoreCase((String) data.get(JsonKey.RESPONSE_CODE))) {
+          Map<String, Object> contentResult = (Map<String, Object>) data.get(JsonKey.RESULT);
+          return (Map<String, Object>) contentResult.get(JsonKey.CONTENT);
+        }
+      }
+    } catch (Exception e) {
+      logger.error(null, "User don't have access to this programId " + collectionId, e);
+    }
+    return new HashMap<>();
+  }
 }
