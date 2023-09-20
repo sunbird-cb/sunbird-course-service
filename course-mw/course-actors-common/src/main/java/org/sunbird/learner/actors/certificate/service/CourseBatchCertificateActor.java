@@ -26,6 +26,7 @@ import org.sunbird.learner.actors.coursebatch.dao.impl.CourseBatchDaoImpl;
 import org.sunbird.learner.constants.CourseJsonKey;
 import org.sunbird.learner.util.CourseBatchUtil;
 import org.sunbird.learner.util.Util;
+import org.sunbird.models.course.batch.CourseBatch;
 
 public class CourseBatchCertificateActor extends BaseActor {
 
@@ -55,7 +56,11 @@ public class CourseBatchCertificateActor extends BaseActor {
         (Map<String, Object>) request.getRequest().get(JsonKey.BATCH);
     final String batchId = (String) batchRequest.get(JsonKey.BATCH_ID);
     final String courseId = (String) batchRequest.get(JsonKey.COURSE_ID);
-    CourseBatchUtil.validateCourseBatch(request.getRequestContext(), courseId, batchId);
+    CourseBatch exsistingBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext());
+    if (exsistingBatch == null) {
+      ProjectCommonException.throwClientErrorException(
+          ResponseCode.CLIENT_ERROR, "No such batchId exists");
+    }
     Map<String, Object> template = (Map<String, Object>) batchRequest.get(CourseJsonKey.TEMPLATE);
     String templateId = (String) template.get(JsonKey.IDENTIFIER);
     validateTemplateDetails(request.getRequestContext(), templateId, template);
