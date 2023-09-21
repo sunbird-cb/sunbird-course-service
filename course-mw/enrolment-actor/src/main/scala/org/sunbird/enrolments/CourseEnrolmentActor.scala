@@ -25,8 +25,10 @@ import org.sunbird.learner.util.{ContentSearchUtil, ContentUtil, CourseBatchSche
 import org.sunbird.models.course.batch.CourseBatch
 import org.sunbird.models.user.courses.UserCourses
 import org.sunbird.cache.util.RedisCacheUtil
+import org.sunbird.cloud.storage.util.JSONUtils.mapper
 import org.sunbird.common.CassandraUtil
 import org.sunbird.common.models.util.ProjectUtil
+import org.sunbird.kafka.client.KafkaClient
 import org.sunbird.learner.actors.course.dao.impl.ContentHierarchyDaoImpl
 import org.sunbird.models.batch.user.BatchUser
 import org.sunbird.telemetry.util.TelemetryUtil
@@ -440,7 +442,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, programId, batchId)
         val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
         validateEnrolment(batchData, enrolmentData, true)
-        getCoursesForProgramAndEnrol(request, programId, userId)
+        getCoursesForProgramAndEnrol(request, programId, userId, batchId)
         val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
         val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, programId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
         upsertEnrollment(userId, programId, batchId, data, dataBatch, (null == enrolmentData), request.getRequestContext)
@@ -451,22 +453,36 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         notifyUser(userId, batchData, JsonKey.ADD)
     }
 
-    def getCoursesForProgramAndEnrol(request: Request, programId: String, userId: String) = {
+    def getCoursesForProgramAndEnrol(request: Request, programId: String, userId: String, batchId: String) = {
         val contentDataForProgram: java.util.List[java.util.Map[String, AnyRef]] = contentHierarchyDao.getContentChildren(request.getRequestContext, programId)
+        var isCourseCount: Int = 0
         for (childNode <- contentDataForProgram.asScala) {
             val courseId: String = childNode.get(JsonKey.IDENTIFIER).asInstanceOf[String]
             val primaryCategory: String = childNode.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]
             if(util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_CHILDREN_PRIMARY_CATEGORY).split(","): _*).contains(primaryCategory)) {
                 // Enroll in course with courseId, userId and batchId.
                 request.getRequest.put(JsonKey.COURSE_ID, courseId)
-                enrollProgramCourses(request)
+                val isAlreadyCompletedOrEnrolledToCourse: Boolean = enrollProgramCourses(request)
+                if(isAlreadyCompletedOrEnrolledToCourse)
+                    isCourseCount = isCourseCount + 1
             } else {
                 ProjectCommonException.throwClientErrorException(ResponseCode.contentTypeMismatch, courseId)
             }
         }
+        if(isCourseCount == contentDataForProgram.size()) {
+            //for generating the kafka event for program generate certificate
+            val eData = Map(
+                "batchId" -> batchId,
+                "userId" -> userId,
+                "programId" -> programId
+            )
+            val topic = ProjectUtil.getConfigValue("kafka_program_cert_pre_processor_topic")
+            if (StringUtils.isNotBlank(topic)) KafkaClient.send(mapper.writeValueAsString(eData), topic)
+            else throw new ProjectCommonException("BE_JOB_REQUEST_EXCEPTION", "Invalid topic id.", ResponseCode.CLIENT_ERROR.getResponseCode)
+        }
     }
 
-    def enrollProgramCourses(request: Request): Unit = {
+    def enrollProgramCourses(request: Request): Boolean = {
         try {
             val courseId: String = request.get(JsonKey.COURSE_ID).asInstanceOf[String]
             val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
@@ -478,6 +494,10 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             val batchId: String = filteredBatches.get(0).get(JsonKey.BATCH_ID).asInstanceOf[String]
             val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
             val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
+            if(null != enrolmentData && enrolmentData.isActive)
+                return true
+            if(null != enrolmentData && ProjectUtil.ProgressStatus.COMPLETED.getValue == enrolmentData.getStatus)
+                return true
             val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
             validateEnrolment(batchData, enrolmentData, true)
             val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
@@ -498,6 +518,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                 logger.error(request.getRequestContext, "Exception in upsertEnrollment list : user ::" + e.getMessage, e)
                 ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, request.get(JsonKey.COURSE_ID).asInstanceOf[String]);
         }
+        false;
     }
 }
 
