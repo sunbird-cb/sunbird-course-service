@@ -455,21 +455,23 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def getCoursesForProgramAndEnrol(request: Request, programId: String, userId: String, batchId: String) = {
         val contentDataForProgram: java.util.List[java.util.Map[String, AnyRef]] = contentHierarchyDao.getContentChildren(request.getRequestContext, programId)
-        var isCourseCount: Int = 0
+        var isProgramCertificateRequired: Boolean = true
         for (childNode <- contentDataForProgram.asScala) {
             val courseId: String = childNode.get(JsonKey.IDENTIFIER).asInstanceOf[String]
             val primaryCategory: String = childNode.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]
-            if(util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_CHILDREN_PRIMARY_CATEGORY).split(","): _*).contains(primaryCategory)) {
+            if (util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_RESTRICTED_CHILDREN_PRIMARY_CATEGORY).split(","): _*).contains(primaryCategory))
+                ProjectCommonException.throwClientErrorException(ResponseCode.contentTypeMismatch, courseId)
+            else if (util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_CHILDREN_PRIMARY_CATEGORY).split(","): _*).contains(primaryCategory)) {
                 // Enroll in course with courseId, userId and batchId.
                 request.getRequest.put(JsonKey.COURSE_ID, courseId)
                 val isAlreadyCompletedOrEnrolledToCourse: Boolean = enrollProgramCourses(request)
-                if(isAlreadyCompletedOrEnrolledToCourse)
-                    isCourseCount = isCourseCount + 1
+                if (!isAlreadyCompletedOrEnrolledToCourse)
+                    isProgramCertificateRequired = false;
             } else {
-                ProjectCommonException.throwClientErrorException(ResponseCode.contentTypeMismatch, courseId)
+                logger.info(request.getRequestContext, "Skipping the enrol for Primary Category" + primaryCategory)
             }
         }
-        if(isCourseCount == contentDataForProgram.size()) {
+        if (isProgramCertificateRequired) {
             //for generating the kafka event for program generate certificate
             val eData = Map(
                 "batchId" -> batchId,
@@ -494,10 +496,6 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             val batchId: String = filteredBatches.get(0).get(JsonKey.BATCH_ID).asInstanceOf[String]
             val batchData: CourseBatch = courseBatchDao.readById(courseId, batchId, request.getRequestContext)
             val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
-            if(null != enrolmentData && enrolmentData.isActive)
-                return true
-            if(null != enrolmentData && ProjectUtil.ProgressStatus.COMPLETED.getValue == enrolmentData.getStatus)
-                return true
             val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
             validateEnrolment(batchData, enrolmentData, true)
             val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
@@ -510,6 +508,10 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             notifyUser(userId, batchData, JsonKey.ADD)
         } catch {
             case e: ProjectCommonException =>
+                if (ResponseCode.userAlreadyEnrolledCourse.getErrorMessage.equals(e.getMessage))
+                    return true
+                if (ResponseCode.userAlreadyCompletedCourse.getErrorMessage.equals(e.getMessage))
+                    return true
                 if (ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage.equals(e.getMessage))
                     ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchEnrollmentDateEnded, ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage)
                 if (ResponseCode.userNotEnrolledCourse.getErrorMessage.equals(e.getMessage))
