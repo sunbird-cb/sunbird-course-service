@@ -476,9 +476,9 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             val eData = Map(
                 "batchId" -> batchId,
                 "userId" -> userId,
-                "programId" -> programId
+                "courseId" -> programId
             )
-            val topic = ProjectUtil.getConfigValue("kafka_program_cert_pre_processor_topic")
+            val topic = ProjectUtil.getConfigValue("kafka_cert_pre_processor_topic")
             if (StringUtils.isNotBlank(topic)) KafkaClient.send(mapper.writeValueAsString(eData), topic)
             else throw new ProjectCommonException("BE_JOB_REQUEST_EXCEPTION", "Invalid topic id.", ResponseCode.CLIENT_ERROR.getResponseCode)
         }
