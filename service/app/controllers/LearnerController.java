@@ -88,7 +88,8 @@ public class LearnerController extends BaseController {
     String loggingHeaders =  httpRequest.attrs().getOptional(Attrs.X_LOGGING_HEADERS).orElse(null);
     String requestedBy = httpRequest.attrs().getOptional(Attrs.USER_ID).orElse(null);
     String requestedFor = httpRequest.attrs().getOptional(Attrs.REQUESTED_FOR).orElse(null);
-    String apiDebugLog = "UpdateContentState Request: " + requestData.toString() + " RequestedBy: " + requestedBy + " RequestedFor: " + requestedFor + " ";
+    String rootOrgId = httpRequest.attrs().getOptional(Attrs.X_AUTH_USER_ORG_ID).orElse(null);
+    String apiDebugLog = "UpdateContentState Request: " + requestData.toString() + " RequestedBy: " + requestedBy + " RequestedFor: " + requestedFor + " " + " Root Org Id: " + rootOrgId + " ";
       try {
       Request reqObj = (Request) mapper.RequestMapper.mapRequest(requestData, Request.class);
       RequestValidator.validateUpdateContent(reqObj);
@@ -107,7 +108,9 @@ public class LearnerController extends BaseController {
         innerMap.put(JsonKey.CONTENTS, reqObj.get(JsonKey.CONTENTS));
         innerMap.put(JsonKey.ASSESSMENT_EVENTS, reqObj.getRequest().get(JsonKey.ASSESSMENT_EVENTS));
       }
-      innerMap.put(JsonKey.USER_ID, reqObj.getRequest().get(JsonKey.USER_ID));
+        innerMap.put(JsonKey.USER_ID, reqObj.getRequest().get(JsonKey.USER_ID));
+        if (StringUtils.isNotBlank(rootOrgId))
+          innerMap.put(SunbirdKey.ROOT_ORG_ID, rootOrgId);
       reqObj.setRequest(innerMap);
       CompletionStage<Result> result = actorResponseHandler(contentConsumptionActor, reqObj, timeout, null, httpRequest);
       return result.thenApplyAsync(r -> {

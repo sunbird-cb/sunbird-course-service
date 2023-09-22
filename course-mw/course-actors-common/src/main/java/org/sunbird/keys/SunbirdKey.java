@@ -57,6 +57,6 @@ public final class SunbirdKey {
     public static final String COLLECTION = "collection";
     public static final String EVENT_SET = "eventSet";
     public static final String OBJECT_TYPE = "objectType";
-
+    public static final String ROOT_ORG_ID = "rootOrgId";
     private SunbirdKey() {}
 }

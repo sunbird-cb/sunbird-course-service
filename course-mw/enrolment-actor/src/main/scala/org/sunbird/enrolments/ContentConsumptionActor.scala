@@ -423,6 +423,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
         val courseId: String = request.getOrDefault(JsonKey.COURSE_ID, "").asInstanceOf[String]
         val batchId: String = request.getOrDefault(JsonKey.BATCH_ID, "").asInstanceOf[String]
         val filters = Map[String, AnyRef]("userid"-> userId, "courseid"-> courseId, "batchid"-> batchId).asJava
+        val rootOrgId: String = request.getOrDefault(JsonKey.ROOT_ORG_ID, "").asInstanceOf[String]
         val result = cassandraOperation
           .getRecords(request.getRequestContext, enrolmentDBInfo.getKeySpace, enrolmentDBInfo.getTableName, filters,
               null)
@@ -431,7 +432,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
           .asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]]
         val response = {
             if (CollectionUtils.isNotEmpty(resp)) {
-                pushEnrolmentSyncEvent(userId, courseId, batchId)
+                pushEnrolmentSyncEvent(userId, courseId, batchId, rootOrgId)
                 successResponse()
             } else {
                 new ProjectCommonException(ResponseCode.invalidRequestData.getErrorCode,
@@ -441,13 +442,13 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
         sender().tell(response, self)
     }
 
-    def pushEnrolmentSyncEvent(userId: String, courseId: String, batchId: String) = {
+    def pushEnrolmentSyncEvent(userId: String, courseId: String, batchId: String, rootOrgId: String) = {
         val now = System.currentTimeMillis()
         val event =
-            s"""{"eid":"BE_JOB_REQUEST","ets":$now,"mid":"LP.$now.${UUID.randomUUID()}"
+            s"""{"eid":"AUDIT","ets":$now,"mid":"AUDIT.$now.${UUID.randomUUID()}"
                |,"actor":{"type":"System","id":"Course Batch Updater"},"context":{"pdata":{"ver":"1.0","id":"org.sunbird.platform"}}
                |,"object":{"type":"CourseBatchEnrolment","id":"${batchId}_${userId}"},"edata":{"action":"user-enrolment-sync"
-               |,"iteration":1,"batchId":"$batchId","userId":"$userId","courseId":"$courseId"}}""".stripMargin
+               |,"iteration":1,"batchId":"$batchId","userId":"$userId","courseId":"$courseId","rootOrgId":"$rootOrgId"}}""".stripMargin
               .replaceAll("\n", "")
         if(pushTokafkaEnabled){
             val topic = ProjectUtil.getConfigValue("kafka_enrolment_sync_topic")
