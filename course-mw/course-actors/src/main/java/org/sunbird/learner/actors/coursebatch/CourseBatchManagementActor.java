@@ -566,7 +566,7 @@ public class CourseBatchManagementActor extends BaseActor {
       Date todayDate) {
     Date endDate = requestedEndDate != null ? requestedEndDate : existingEndDate;
     if (requestedEnrollmentEndDate != null
-        && (requestedEnrollmentEndDate.after(requestedStartDate))) {
+        && (requestedEnrollmentEndDate.before(requestedStartDate))) {
       throw new ProjectCommonException(
           ResponseCode.enrollmentEndDateStartError.getErrorCode(),
           ResponseCode.enrollmentEndDateStartError.getErrorMessage(),
