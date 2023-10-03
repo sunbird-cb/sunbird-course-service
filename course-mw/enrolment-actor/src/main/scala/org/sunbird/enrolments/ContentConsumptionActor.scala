@@ -2,8 +2,8 @@ package org.sunbird.enrolments
 
 import java.util
 import java.util.{Date, TimeZone, UUID}
-
 import com.fasterxml.jackson.databind.ObjectMapper
+
 import javax.inject.Inject
 import org.apache.commons.collections4.{CollectionUtils, MapUtils}
 import org.apache.commons.lang3.StringUtils
@@ -18,10 +18,11 @@ import org.sunbird.common.util.JsonUtil
 import org.sunbird.helper.ServiceFactory
 import org.sunbird.kafka.client.{InstructionEventGenerator, KafkaClient}
 import org.sunbird.learner.constants.{CourseJsonKey, InstructionEvent}
-import org.sunbird.learner.util.Util
+import org.sunbird.learner.util.{ContentUtil, Util}
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+import scala.language.postfixOps
 
 case class InternalContentConsumption(courseId: String, batchId: String, contentId: String) {
   def validConsumption() = StringUtils.isNotBlank(courseId) && StringUtils.isNotBlank(batchId) && StringUtils.isNotBlank(contentId)
@@ -77,7 +78,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
             } else contentList
             logger.info(requestContext, "Final content-consumption data: " + finalContentList)
             // Update consumption first and then push the assessment events if there are any. This will help us handling failures of max attempts (for assessment content).
-            val contentConsumptionResponse = processContents(finalContentList, requestContext, requestBy, requestedFor)
+            val contentConsumptionResponse = processContents(finalContentList, requestContext, requestBy, requestedFor,request)
             val assessmentResponse = processAssessments(assessmentEvents, requestContext, requestBy, requestedFor)
             val finalResponse = assessmentResponse.getOrElse(new Response())
             finalResponse.putAll(contentConsumptionResponse.getOrElse(new Response()).getResult)
@@ -150,7 +151,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
         } else None
     }
 
-    def processContents(contentList: java.util.List[java.util.Map[String, AnyRef]], requestContext: RequestContext, requestedBy: String, requestedFor: String): Option[Response] = {
+    def processContents(contentList: java.util.List[java.util.Map[String, AnyRef]], requestContext: RequestContext, requestedBy: String, requestedFor: String,request: Request): Option[Response] = {
         if(CollectionUtils.isNotEmpty(contentList)) {
             val batchContentList: Map[String, List[java.util.Map[String, AnyRef]]] = contentList.filter(event => StringUtils.isNotBlank(event.getOrDefault(JsonKey.BATCH_ID, "").asInstanceOf[String])).toList.groupBy(event => event.get(JsonKey.BATCH_ID).asInstanceOf[String])
             val batchIds = batchContentList.keySet.toList.asJava
@@ -182,7 +183,17 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                             val updateData = getLatestReadDetails(userId, batchId, contents)
                             cassandraOperation.updateRecordV2(requestContext, enrolmentDBInfo.getKeySpace, enrolmentDBInfo.getTableName, updateData._1, updateData._2, true)
                             contentIds.map(id => responseMessage.put(id,JsonKey.SUCCESS))
-
+                            val fieldList = List("primaryCategory", "parentCollections")
+                            val primaryCategoryDataMap = ContentUtil.getContentReadV3(courseId, fieldList, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+                            primaryCategoryDataMap.get("primaryCategory") match {
+                                case Some(value) if !Seq("Blended Program", "Program", "Curated Program").contains(value) =>
+                                    val parentCollectionList = primaryCategoryDataMap.get("parentCollections").asInstanceOf[List[AnyRef]]
+                                    parentCollectionList.foreach { parentCollection =>
+                                        pushInstructionEvent(requestContext, userId, "", parentCollection.asInstanceOf[String], contents.asJava)
+                                    }
+                                case _ =>
+                                // Handle the case when "primaryCategory" is missing or doesn't match the specified values
+                            }
                         } else {
                             logger.info(requestContext, "ContentConsumptionActor: addContent : User Id is invalid : " + userId)
                             invalidContents.addAll(entry._2.asJava)
