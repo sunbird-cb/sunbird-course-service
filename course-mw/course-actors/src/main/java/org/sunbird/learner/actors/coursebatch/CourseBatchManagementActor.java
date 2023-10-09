@@ -422,12 +422,13 @@ public class CourseBatchManagementActor extends BaseActor {
         requestedStartDate,
         requestedEndDate,
         requestedEnrollmentEndDate,
-        todayDate);
-    courseBatch.setStartDate( 
+        todayDate,
+        requestContext);
+    courseBatch.setStartDate(
             null != requestedStartDate
                     ? requestedStartDate
                     : courseBatch.getStartDate());
-    courseBatch.setEndDate( 
+    courseBatch.setEndDate(
              null != requestedEndDate
                     ? requestedEndDate
                     : courseBatch.getEndDate());
@@ -563,10 +564,12 @@ public class CourseBatchManagementActor extends BaseActor {
       Date requestedStartDate,
       Date requestedEndDate,
       Date requestedEnrollmentEndDate,
-      Date todayDate) {
+      Date todayDate,
+      RequestContext requestContext) {
     Date endDate = requestedEndDate != null ? requestedEndDate : existingEndDate;
     if (enrolmentDateValidationEnabled() && requestedEnrollmentEndDate != null
         && (requestedEnrollmentEndDate.before(requestedStartDate))) {
+      logger.info(requestContext, "The flag for enabling validation is: "+ enrolmentDateValidationEnabled());
       throw new ProjectCommonException(
           ResponseCode.enrollmentEndDateStartError.getErrorCode(),
           ResponseCode.enrollmentEndDateStartError.getErrorMessage(),
