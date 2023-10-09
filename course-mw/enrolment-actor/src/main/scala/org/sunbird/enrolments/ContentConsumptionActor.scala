@@ -178,21 +178,21 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                                 CassandraUtil.changeCassandraColumnMapping(processContentConsumption(inputContent, existingContent, userId))
                             })
                             // First push the event to kafka and then update cassandra user_content_consumption table
-                            pushInstructionEvent(requestContext, userId, batchId, courseId, contents.asJava)
+                            val fieldList = List(JsonKey.PRIMARYCATEGORY, JsonKey.PARENT_COLLECTIONS)
+                            val primaryCategoryDataMap = ContentUtil.getContentReadV3(courseId, fieldList, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+                            pushInstructionEvent(requestContext, userId, batchId, courseId, contents.asJava,primaryCategoryDataMap.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])
                             cassandraOperation.batchInsertLogged(requestContext, consumptionDBInfo.getKeySpace, consumptionDBInfo.getTableName, contents)
                             val updateData = getLatestReadDetails(userId, batchId, contents)
                             cassandraOperation.updateRecordV2(requestContext, enrolmentDBInfo.getKeySpace, enrolmentDBInfo.getTableName, updateData._1, updateData._2, true)
                             contentIds.map(id => responseMessage.put(id,JsonKey.SUCCESS))
-                            val fieldList = List("primaryCategory", "parentCollections")
-                            val primaryCategoryDataMap = ContentUtil.getContentReadV3(courseId, fieldList, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
-                            primaryCategoryDataMap.get("primaryCategory") match {
-                                case Some(value) if !Seq("Blended Program", "Program", "Curated Program").contains(value) =>
-                                    val parentCollectionList = primaryCategoryDataMap.get("parentCollections").asInstanceOf[List[AnyRef]]
+                            primaryCategoryDataMap.get(JsonKey.PRIMARYCATEGORY) match {
+                                case Some(value) if !Seq(JsonKey.BLENDED_PROGRAM,JsonKey.PROGRAM,JsonKey.CURATED_PROGRAM).contains(value) =>
+                                    val parentCollectionList = primaryCategoryDataMap.get(JsonKey.PARENT_COLLECTIONS).asInstanceOf[List[AnyRef]]
                                     parentCollectionList.foreach { parentCollection =>
-                                        pushInstructionEvent(requestContext, userId, "", parentCollection.asInstanceOf[String], contents.asJava)
+                                        pushInstructionEvent(requestContext, userId, "", parentCollection.asInstanceOf[String], contents.asJava,"")
                                     }
                                 case _ =>
-                                // Handle the case when "primaryCategory" is missing or doesn't match the specified values
+                                    logger.info(requestContext,"The Primary category is not a Blended Program,Program and Curated Program")
                             }
                         } else {
                             logger.info(requestContext, "ContentConsumptionActor: addContent : User Id is invalid : " + userId)
@@ -343,7 +343,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
     }
 
     @throws[Exception]
-    private def pushInstructionEvent(requestContext: RequestContext, userId: String, batchId: String, courseId: String, contents: java.util.List[java.util.Map[String, AnyRef]]): Unit = {
+    private def pushInstructionEvent(requestContext: RequestContext, userId: String, batchId: String, courseId: String, contents: java.util.List[java.util.Map[String, AnyRef]],primaryCategory:String): Unit = {
         val data = new java.util.HashMap[String, AnyRef]
         data.put(CourseJsonKey.ACTOR, new java.util.HashMap[String, AnyRef]() {{
             put(JsonKey.ID, InstructionEvent.BATCH_USER_STATE_UPDATE.getActorId)
