@@ -565,7 +565,7 @@ public class CourseBatchManagementActor extends BaseActor {
       Date requestedEnrollmentEndDate,
       Date todayDate) {
     Date endDate = requestedEndDate != null ? requestedEndDate : existingEndDate;
-    if (requestedEnrollmentEndDate != null
+    if (enrolmentDateValidationEnabled() && requestedEnrollmentEndDate != null
         && (requestedEnrollmentEndDate.before(requestedStartDate))) {
       throw new ProjectCommonException(
           ResponseCode.enrollmentEndDateStartError.getErrorCode(),
@@ -723,6 +723,11 @@ public class CourseBatchManagementActor extends BaseActor {
         return null;
       }
     }).orElse(null));
+  }
+  private static boolean enrolmentDateValidationEnabled() {
+    return Boolean.parseBoolean(
+            PropertiesCache.getInstance()
+                    .getProperty(JsonKey.COURSE_BATCH_ENROLL_END_DATE_LESS));
   }
 
 }
