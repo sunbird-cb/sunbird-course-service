@@ -5,7 +5,7 @@ import java.text.{MessageFormat, SimpleDateFormat}
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId}
 import java.util
-import java.util.{Comparator, Date}
+import java.util.{Comparator, Date, UUID}
 import akka.actor.ActorRef
 import com.fasterxml.jackson.databind.ObjectMapper
 
@@ -474,14 +474,11 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         }
         if (isProgramCertificateRequired) {
             //for generating the kafka event for program generate certificate
-            val eData = Map(
-                "batchId" -> batchId,
-                "userId" -> userId,
-                "courseId" -> programId,
-                "parentCollections" -> List(programId)
-            )
+            val ets = System.currentTimeMillis
+            val mid = s"""LP.${ets}.${UUID.randomUUID}"""
+            val event = s"""{"eid": "BE_JOB_REQUEST","ets": ${ets},"mid": "${mid}","actor": {"id": "Program Certificate Pre Processor Generator","type": "System"},"context": {"pdata": {"ver": "1.0","id": "org.sunbird.platform"}},"object": {"id": "${batchId}_${programId}","type": "ProgramCertificatePreProcessorGeneration"},"edata": {"userId": ${userId},"action": "program-issue-certificate","iteration": 1, "trigger": "auto-issue","batchId": "${batchId}","parentCollections": ["${programId}"],"courseId": "${programId}"}}"""
             val topic = ProjectUtil.getConfigValue("kafka_cert_pre_processor_topic")
-            if (StringUtils.isNotBlank(topic)) KafkaClient.send(mapper.writeValueAsString(eData), topic)
+            if (StringUtils.isNotBlank(topic)) KafkaClient.send(mapper.writeValueAsString(event), topic)
             else throw new ProjectCommonException("BE_JOB_REQUEST_EXCEPTION", "Invalid topic id.", ResponseCode.CLIENT_ERROR.getResponseCode)
         }
     }
