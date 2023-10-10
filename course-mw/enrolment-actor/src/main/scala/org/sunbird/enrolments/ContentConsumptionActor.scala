@@ -179,21 +179,23 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                             })
                             // First push the event to kafka and then update cassandra user_content_consumption table
                             val fieldList = List(JsonKey.PRIMARYCATEGORY, JsonKey.PARENT_COLLECTIONS)
-                            val primaryCategoryDataMap = ContentUtil.getContentReadV3(courseId, fieldList, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
-                            pushInstructionEvent(requestContext, userId, batchId, courseId, contents.asJava,primaryCategoryDataMap.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])
+                            val contentInfoMap = ContentUtil.getContentReadV3(courseId, fieldList, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+                            val parentCollectionList = contentInfoMap.get(JsonKey.PARENT_COLLECTIONS).asInstanceOf[List[AnyRef]]
+                            pushInstructionEvent(requestContext, userId, batchId, courseId, contents.asJava, contentInfoMap.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String], parentCollectionList)
                             cassandraOperation.batchInsertLogged(requestContext, consumptionDBInfo.getKeySpace, consumptionDBInfo.getTableName, contents)
                             val updateData = getLatestReadDetails(userId, batchId, contents)
                             cassandraOperation.updateRecordV2(requestContext, enrolmentDBInfo.getKeySpace, enrolmentDBInfo.getTableName, updateData._1, updateData._2, true)
                             contentIds.map(id => responseMessage.put(id,JsonKey.SUCCESS))
+                            /*
                             primaryCategoryDataMap.get(JsonKey.PRIMARYCATEGORY) match {
                                 case Some(value) if !Seq(JsonKey.BLENDED_PROGRAM,JsonKey.PROGRAM,JsonKey.CURATED_PROGRAM).contains(value) =>
-                                    val parentCollectionList = primaryCategoryDataMap.get(JsonKey.PARENT_COLLECTIONS).asInstanceOf[List[AnyRef]]
                                     parentCollectionList.foreach { parentCollection =>
                                         pushInstructionEvent(requestContext, userId, "", parentCollection.asInstanceOf[String], contents.asJava,"")
                                     }
                                 case _ =>
                                     logger.info(requestContext,"The Primary category is not a Blended Program,Program and Curated Program")
                             }
+                            */
                         } else {
                             logger.info(requestContext, "ContentConsumptionActor: addContent : User Id is invalid : " + userId)
                             invalidContents.addAll(entry._2.asJava)
@@ -343,7 +345,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
     }
 
     @throws[Exception]
-    private def pushInstructionEvent(requestContext: RequestContext, userId: String, batchId: String, courseId: String, contents: java.util.List[java.util.Map[String, AnyRef]],primaryCategory:String): Unit = {
+    private def pushInstructionEvent(requestContext: RequestContext, userId: String, batchId: String, courseId: String, contents: java.util.List[java.util.Map[String, AnyRef]], primaryCategory:String, parentCollections: List[AnyRef]): Unit = {
         val data = new java.util.HashMap[String, AnyRef]
         data.put(CourseJsonKey.ACTOR, new java.util.HashMap[String, AnyRef]() {{
             put(JsonKey.ID, InstructionEvent.BATCH_USER_STATE_UPDATE.getActorId)
@@ -363,6 +365,8 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
             put(JsonKey.BATCH_ID, batchId)
             put(JsonKey.COURSE_ID, courseId)
             put(JsonKey.CONTENTS, contentsMap)
+            put(JsonKey.PRIMARYCATEGORY, primaryCategory)
+            put(JsonKey.PARENT_COLLECTIONS, parentCollections)
             put(CourseJsonKey.ACTION, InstructionEvent.BATCH_USER_STATE_UPDATE.getAction)
             put(CourseJsonKey.ITERATION, 1.asInstanceOf[AnyRef])
         }})
