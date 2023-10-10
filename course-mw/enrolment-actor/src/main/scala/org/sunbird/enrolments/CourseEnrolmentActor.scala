@@ -469,6 +469,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                     isProgramCertificateRequired = false;
             } else {
                 logger.info(request.getRequestContext, "Skipping the enrol for Primary Category" + primaryCategory)
+                isProgramCertificateRequired = false;
             }
         }
         if (isProgramCertificateRequired) {
@@ -476,7 +477,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             val eData = Map(
                 "batchId" -> batchId,
                 "userId" -> userId,
-                "courseId" -> programId
+                "courseId" -> programId,
+                "parentCollections" -> List(programId)
             )
             val topic = ProjectUtil.getConfigValue("kafka_cert_pre_processor_topic")
             if (StringUtils.isNotBlank(topic)) KafkaClient.send(mapper.writeValueAsString(eData), topic)
