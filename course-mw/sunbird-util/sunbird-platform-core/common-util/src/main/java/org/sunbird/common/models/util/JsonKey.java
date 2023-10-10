@@ -1093,5 +1093,9 @@ public final class JsonKey {
   public static final String CONTENT_HIERARCHY_STORE_DB = "content_hierarchy";
   public static final String PROGRAM_ENROLL_RESTRICTED_CHILDREN_PRIMARY_CATEGORY = "program_enroll_restricted_children_primary_category";
 
+  public static final String BLENDED_PROGRAM= "Blended Program";
+  public static final String PROGRAM= "Program";
+  public static final String CURATED_PROGRAM= "Curated Program";
+  public static final String PARENT_COLLECTIONS= "parentCollections";
   private JsonKey() {}
 }
