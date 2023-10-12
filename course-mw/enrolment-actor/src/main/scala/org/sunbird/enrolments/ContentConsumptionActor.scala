@@ -180,7 +180,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                             // First push the event to kafka and then update cassandra user_content_consumption table
                             val fieldList = List(JsonKey.PRIMARYCATEGORY, JsonKey.PARENT_COLLECTIONS)
                             val contentInfoMap = ContentUtil.getContentReadV3(courseId, fieldList, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
-                            val parentCollectionList = contentInfoMap.get(JsonKey.PARENT_COLLECTIONS).asInstanceOf[List[AnyRef]]
+                            val parentCollectionList = contentInfoMap.get(JsonKey.PARENT_COLLECTIONS).asInstanceOf[java.util.List[String]]
                             pushInstructionEvent(requestContext, userId, batchId, courseId, contents.asJava, contentInfoMap.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String], parentCollectionList)
                             cassandraOperation.batchInsertLogged(requestContext, consumptionDBInfo.getKeySpace, consumptionDBInfo.getTableName, contents)
                             val updateData = getLatestReadDetails(userId, batchId, contents)
@@ -345,7 +345,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
     }
 
     @throws[Exception]
-    private def pushInstructionEvent(requestContext: RequestContext, userId: String, batchId: String, courseId: String, contents: java.util.List[java.util.Map[String, AnyRef]], primaryCategory:String, parentCollections: List[AnyRef]): Unit = {
+    private def pushInstructionEvent(requestContext: RequestContext, userId: String, batchId: String, courseId: String, contents: java.util.List[java.util.Map[String, AnyRef]], primaryCategory:String, parentCollections: java.util.List[String]): Unit = {
         val data = new java.util.HashMap[String, AnyRef]
         data.put(CourseJsonKey.ACTOR, new java.util.HashMap[String, AnyRef]() {{
             put(JsonKey.ID, InstructionEvent.BATCH_USER_STATE_UPDATE.getActorId)
