@@ -1097,5 +1097,6 @@ public final class JsonKey {
   public static final String PROGRAM= "Program";
   public static final String CURATED_PROGRAM= "Curated Program";
   public static final String PARENT_COLLECTIONS= "parentCollections";
+  public static final String ADMIN_PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY = "admin_program_enroll_allowed_primary_category";
   private JsonKey() {}
 }

@@ -433,7 +433,10 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def enrollProgram(request: Request): Unit = {
         val programId: String = request.get(JsonKey.PROGRAM_ID).asInstanceOf[String]
+        val isAdminAPI: Boolean = request.get(JsonKey.IS_ADMIN_API).asInstanceOf[Boolean]
         val contentData = ContentUtil.getContentReadV2(programId, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+        if(isAdminAPI && (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.ADMIN_PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])))
+            ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId);
         if (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]))
             ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId);
         val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
