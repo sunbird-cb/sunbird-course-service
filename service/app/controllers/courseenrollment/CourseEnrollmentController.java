@@ -270,7 +270,6 @@ public class CourseEnrollmentController extends BaseController {
                     req.getRequest().put(JsonKey.IS_ADMIN_API, false);
                     validator.validateRequestedBy(userId);
                     validator.validateEnrollProgram(req);
-                    req.getContext().put(JsonKey.USER_ID, userId);
                     req.getRequest().put(JsonKey.USER_ID, userId);
                     return null;
                 },
