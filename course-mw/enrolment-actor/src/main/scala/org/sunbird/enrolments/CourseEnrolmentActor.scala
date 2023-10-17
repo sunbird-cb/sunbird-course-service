@@ -482,7 +482,6 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                 // Enroll in course with courseId, userId and batchId.
                 request.getRequest.put(JsonKey.COURSE_ID, courseId)
                 val isAlreadyCompletedOrEnrolledToCourse: Boolean = enrollProgramCourses(request)
-                if (!isAlreadyCompletedOrEnrolledToCourse)
             } else {
                 logger.info(request.getRequestContext, "Skipping the enrol for Primary Category" + primaryCategory)
             }
