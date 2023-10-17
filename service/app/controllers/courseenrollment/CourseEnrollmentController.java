@@ -266,6 +266,26 @@ public class CourseEnrollmentController extends BaseController {
                     Map<String, String[]> queryParams = new HashMap<>(httpRequest.queryString());
                     String programId = req.getRequest().containsKey(JsonKey.PROGRAM_ID) ? JsonKey.PROGRAM_ID : JsonKey.COLLECTION_ID;
                     req.getRequest().put(JsonKey.PROGRAM_ID, req.getRequest().get(programId));
+                    String userId = (String) req.getContext().getOrDefault(JsonKey.REQUESTED_FOR, req.getContext().get(JsonKey.REQUESTED_BY));
+                    req.getRequest().put(JsonKey.IS_ADMIN_API, false);
+                    validator.validateRequestedBy(userId);
+                    validator.validateEnrollProgram(req);
+                    req.getRequest().put(JsonKey.USER_ID, userId);
+                    return null;
+                },
+                getAllRequestHeaders(httpRequest),
+                httpRequest);
+    }
+
+    public CompletionStage<Result> adminEnrollProgram(Http.Request httpRequest) {
+        return handleRequest(courseEnrolmentActor, "enrolProgram",
+                httpRequest.body().asJson(),
+                (request) -> {
+                    Request req = (Request) request;
+                    Map<String, String[]> queryParams = new HashMap<>(httpRequest.queryString());
+                    String programId = req.getRequest().containsKey(JsonKey.PROGRAM_ID) ? JsonKey.PROGRAM_ID : JsonKey.COLLECTION_ID;
+                    req.getRequest().put(JsonKey.PROGRAM_ID, req.getRequest().get(programId));
+                    req.getRequest().put(JsonKey.IS_ADMIN_API, true);
                     validator.validateEnrollProgram(req);
                     return null;
                 },
