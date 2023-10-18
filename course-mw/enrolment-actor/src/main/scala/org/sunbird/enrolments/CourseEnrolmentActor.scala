@@ -435,10 +435,10 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val programId: String = request.get(JsonKey.PROGRAM_ID).asInstanceOf[String]
         val isAdminAPI: Boolean = request.get(JsonKey.IS_ADMIN_API).asInstanceOf[Boolean]
         val fieldList = List(JsonKey.PRIMARYCATEGORY, JsonKey.IDENTIFIER, JsonKey.BATCHES)
-        val contentData = getContentReadAPIData(programId,fieldList, request)
-        if(isAdminAPI && (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.ADMIN_PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])))
+        val contentData = getContentReadAPIData(programId, fieldList, request)
+        if (isAdminAPI && (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.ADMIN_PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])))
             ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId);
-        if (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]))
+        if (!isAdminAPI && (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])))
             ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId);
         val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
         val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
