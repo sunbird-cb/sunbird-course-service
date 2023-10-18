@@ -434,7 +434,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     def enrollProgram(request: Request): Unit = {
         val programId: String = request.get(JsonKey.PROGRAM_ID).asInstanceOf[String]
         val isAdminAPI: Boolean = request.get(JsonKey.IS_ADMIN_API).asInstanceOf[Boolean]
-        val contentData = ContentUtil.getContentReadV2(programId, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+        val fieldList = List(JsonKey.PRIMARYCATEGORY, JsonKey.IDENTIFIER, JsonKey.BATCHES)
+        val contentData = getContentReadAPIData(programId,fieldList, request)
         if(isAdminAPI && (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.ADMIN_PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])))
             ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId);
         if (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]))
@@ -454,6 +455,16 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         sender().tell(successResponse(), self)
         generateTelemetryAudit(userId, programId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
         notifyUser(userId, batchData, JsonKey.ADD)
+    }
+
+    def getContentReadAPIData(programId: String, fieldList: List[String], request: Request): util.Map[String, AnyRef] = {
+        val responseString: String = cacheUtil.get(programId)
+        val contentData: util.Map[String, AnyRef] = if (responseString != null) {
+            JsonUtil.deserialize(responseString, new util.HashMap[String, AnyRef]().getClass)
+        } else {
+            ContentUtil.getContentReadV3(programId, fieldList, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+        }
+        contentData
     }
 
     def getCoursesForProgramAndEnrol(request: Request, programId: String, userId: String, batchId: String) = {
