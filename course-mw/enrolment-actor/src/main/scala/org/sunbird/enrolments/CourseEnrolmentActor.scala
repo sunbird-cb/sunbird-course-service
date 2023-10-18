@@ -452,6 +452,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         upsertEnrollment(userId, programId, batchId, data, dataBatch, (null == enrolmentData), request.getRequestContext)
         logger.info(request.getRequestContext, "ProgramEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
         cacheUtil.delete(getCacheKey(userId))
+        generatePreProcessorKafkaEvent(request,batchId, programId, userId)
         sender().tell(successResponse(), self)
         generateTelemetryAudit(userId, programId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
         notifyUser(userId, batchData, JsonKey.ADD)
@@ -467,9 +468,25 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         contentData
     }
 
+    /**
+     *
+     * @param batchId   -BatchId of the Program
+     * @param programId - ProgramId of the Program
+     * @param userId    - UserId of the Program
+     */
+    def generatePreProcessorKafkaEvent(request: Request, batchId: String, programId: String, userId: String): Unit = {
+        //for generating the kafka event for program generate certificate
+        logger.info(request.getRequestContext, "Inside the generatePreProcessorKafkaEvent")
+        val ets = System.currentTimeMillis
+        val mid = s"""LP.${ets}.${UUID.randomUUID}"""
+        val event = s"""{"eid": "BE_JOB_REQUEST","ets": ${ets},"mid": "${mid}","actor": {"id": "Program Certificate Pre Processor Generator","type": "System"},"context": {"pdata": {"ver": "1.0","id": "org.sunbird.platform"}},"object": {"id": "${batchId}_${programId}","type": "ProgramCertificatePreProcessorGeneration"},"edata": {"userId": "${userId}","action": "program-issue-certificate","iteration": 1, "trigger": "auto-issue","batchId": "${batchId}","parentCollections": ["${programId}"],"courseId": "${programId}"}}"""
+        val topic = ProjectUtil.getConfigValue("kafka_cert_pre_processor_topic")
+        if (StringUtils.isNotBlank(topic)) KafkaClient.send(event, topic)
+        else throw new ProjectCommonException("BE_JOB_REQUEST_EXCEPTION", "Invalid topic id.", ResponseCode.CLIENT_ERROR.getResponseCode)
+    }
+
     def getCoursesForProgramAndEnrol(request: Request, programId: String, userId: String, batchId: String) = {
         val contentDataForProgram: java.util.List[java.util.Map[String, AnyRef]] = contentHierarchyDao.getContentChildren(request.getRequestContext, programId)
-        var isProgramCertificateRequired: Boolean = true
         for (childNode <- contentDataForProgram.asScala) {
             val courseId: String = childNode.get(JsonKey.IDENTIFIER).asInstanceOf[String]
             val primaryCategory: String = childNode.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]
@@ -479,21 +496,9 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                 // Enroll in course with courseId, userId and batchId.
                 request.getRequest.put(JsonKey.COURSE_ID, courseId)
                 val isAlreadyCompletedOrEnrolledToCourse: Boolean = enrollProgramCourses(request)
-                if (!isAlreadyCompletedOrEnrolledToCourse)
-                    isProgramCertificateRequired = false;
             } else {
                 logger.info(request.getRequestContext, "Skipping the enrol for Primary Category" + primaryCategory)
-                isProgramCertificateRequired = false;
             }
-        }
-        if (isProgramCertificateRequired) {
-            //for generating the kafka event for program generate certificate
-            val ets = System.currentTimeMillis
-            val mid = s"""LP.${ets}.${UUID.randomUUID}"""
-            val event = s"""{"eid": "BE_JOB_REQUEST","ets": ${ets},"mid": "${mid}","actor": {"id": "Program Certificate Pre Processor Generator","type": "System"},"context": {"pdata": {"ver": "1.0","id": "org.sunbird.platform"}},"object": {"id": "${batchId}_${programId}","type": "ProgramCertificatePreProcessorGeneration"},"edata": {"userId": "${userId}","action": "program-issue-certificate","iteration": 1, "trigger": "auto-issue","batchId": "${batchId}","parentCollections": ["${programId}"],"courseId": "${programId}"}}"""
-            val topic = ProjectUtil.getConfigValue("kafka_cert_pre_processor_topic")
-            if (StringUtils.isNotBlank(topic)) KafkaClient.send(event, topic)
-            else throw new ProjectCommonException("BE_JOB_REQUEST_EXCEPTION", "Invalid topic id.", ResponseCode.CLIENT_ERROR.getResponseCode)
         }
     }
 
