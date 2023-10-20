@@ -175,7 +175,8 @@ public enum ActorOperations {
   GROUP_ACTIVITY_AGGREGATES("groupActivityAggregates"),
   UPDATE_EVENT_SET("updateEventSet"),
   DELETE_EVENT_SET("deleteEventSet"),
-  DELETE_EVENT("deleteEvent");
+  DELETE_EVENT("deleteEvent"),
+  COURSE_BATCH_DATE_NOTIFICATION("courseBatchDateNotification");
 
   private String value;
 

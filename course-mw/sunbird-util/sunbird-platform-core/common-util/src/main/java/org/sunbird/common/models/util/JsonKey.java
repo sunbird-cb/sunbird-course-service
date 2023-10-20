@@ -1024,7 +1024,7 @@ public final class JsonKey {
   public static final String USER_SEARCH_BASE_URL = "sunbird_user_service_api_base_url";
   public static final String SUNBIRD_QRCODE_COURSES_LIMIT ="sunbird_user_qrcode_courses_limit";
   public static final String ACCESS_TOKEN_PUBLICKEY_BASEPATH = "accesstoken.publickey.basepath";
-  public static final String ACCESS_TOKEN_PUBLICKEY_KEYPREFIX = "accesstoken.publickey.keyprefix";
+  public static final String ACCESS_TOKEN_PUBLICKEY_KEYPREFIX = "accesstoken_publickey_keyprefix";
   public static final String ACCESS_TOKEN_PUBLICKEY_KEYCOUNT = "accesstoken.publickey.keycount";
   public static final String SHA_256_WITH_RSA = "SHA256withRSA";
   public static final String SUB = "sub";
@@ -1086,6 +1086,13 @@ public final class JsonKey {
   public static final String IS_ADMIN_API = "isAdminAPI";
   public static final String RETIRED_COURE_ENABLED = "retiredCoursesEnabled";
   public static final String FALSE = "false";
-    
+  public static final String LMS_SERVICE_HOST = "lms.service.host";
+  public static final String SUNBIRD_BATCH_UPDATE_NOTIFICATIONS_ENABLED =
+          "sunbird_batch_update_notification_enabled";
+
+  public static final String REGARDS = "regards";
+  public static final String SUNBIRD_BATCH_DATE_UPDATE_NOTIFICATIONS_SUBJECT = "sunbird_batch_date_update_notifications_subject" ;
+  public static final String LMS_SEND_EMAIL_NOTIFICATION_PATH = "lms.send.email.notification";
+
   private JsonKey() {}
 }

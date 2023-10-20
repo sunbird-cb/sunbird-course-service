@@ -21,7 +21,9 @@ import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
 import org.sunbird.common.responsecode.ResponseCode;
 import org.sunbird.common.util.JsonUtil;
+import org.sunbird.learner.actors.coursebatch.dao.BatchUserDao;
 import org.sunbird.learner.actors.coursebatch.dao.CourseBatchDao;
+import org.sunbird.learner.actors.coursebatch.dao.impl.BatchUserDaoImpl;
 import org.sunbird.learner.actors.coursebatch.dao.impl.CourseBatchDaoImpl;
 import org.sunbird.learner.actors.coursebatch.service.UserCoursesService;
 import org.sunbird.learner.constants.CourseJsonKey;
@@ -233,6 +235,10 @@ public class CourseBatchManagementActor extends BaseActor {
     if (courseNotificationActive()) {
       batchOperationNotifier(actorMessage, courseBatch, participantsMap);
     }
+    if (batchDatesUpdateNotificationActive()) {
+      batchDatesUpdateNotifier(actorMessage, courseBatch, oldBatch);
+    }
+
   }
 
   private Map<String, Object> getMentorLists(
@@ -565,7 +571,7 @@ public class CourseBatchManagementActor extends BaseActor {
       Date requestedEnrollmentEndDate,
       Date todayDate) {
     Date endDate = requestedEndDate != null ? requestedEndDate : existingEndDate;
-    if (requestedEnrollmentEndDate != null
+    if (enrolmentDateValidationEnabled() && requestedEnrollmentEndDate != null
         && (requestedEnrollmentEndDate.after(requestedStartDate))) {
       throw new ProjectCommonException(
           ResponseCode.enrollmentEndDateStartError.getErrorCode(),
@@ -723,6 +729,29 @@ public class CourseBatchManagementActor extends BaseActor {
         return null;
       }
     }).orElse(null));
+  }
+  private static boolean enrolmentDateValidationEnabled() {
+    return Boolean.parseBoolean(
+            PropertiesCache.getInstance()
+                    .getProperty(JsonKey.COURSE_BATCH_ENROLL_END_DATE_LESS));
+  }
+  private boolean batchDatesUpdateNotificationActive() {
+    return Boolean.parseBoolean(
+            PropertiesCache.getInstance()
+                    .getProperty(JsonKey.SUNBIRD_BATCH_UPDATE_NOTIFICATIONS_ENABLED));
+  }
+
+  private void batchDatesUpdateNotifier(Request actorMessage, CourseBatch updatedCourseBatch, CourseBatch oldCourseBatch) {
+    Request batchNotification = new Request(actorMessage.getRequestContext());
+    batchNotification.getContext().putAll(actorMessage.getContext());
+    batchNotification.setOperation(ActorOperations.COURSE_BATCH_DATE_NOTIFICATION.getValue());
+    Map<String, Object> request = new HashMap<>();
+    request.put(Constants.OLD_COURSE_BATCH, oldCourseBatch);
+    request.put(Constants.UPDATED_COURSE_BATCH, updatedCourseBatch);
+    request.put(Constants.REQUEST_CONTEXT, actorMessage.getRequestContext());
+    request.put(Constants.REQUEST_CONTEXT,actorMessage.getRequest());
+    batchNotification.setRequest(request);
+    courseBatchNotificationActorRef.tell(batchNotification, getSelf());
   }
 
 }
