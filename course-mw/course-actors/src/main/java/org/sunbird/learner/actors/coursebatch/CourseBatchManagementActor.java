@@ -493,7 +493,7 @@ public class CourseBatchManagementActor extends BaseActor {
     Date startDate = null != requestedStartDate ? requestedStartDate : existingStartDate;
     Date endDate = null != requestedEndDate ? requestedEndDate : existingEndDate;
 
-    if ((existingStartDate.before(todayDate) || existingStartDate.equals(todayDate))
+   /* if ((existingStartDate.before(todayDate) || existingStartDate.equals(todayDate))
         && !(existingStartDate.equals(requestedStartDate))) {
       throw new ProjectCommonException(
           ResponseCode.invalidBatchStartDateError.getErrorCode(),
@@ -506,7 +506,7 @@ public class CourseBatchManagementActor extends BaseActor {
           ResponseCode.invalidBatchStartDateError.getErrorCode(),
           ResponseCode.invalidBatchStartDateError.getErrorMessage(),
           ResponseCode.CLIENT_ERROR.getResponseCode());
-    }
+    }*/
 
     if (endDate != null && startDate.after(endDate)) {
       throw new ProjectCommonException(
@@ -570,7 +570,7 @@ public class CourseBatchManagementActor extends BaseActor {
       Date todayDate) {
     Date endDate = requestedEndDate != null ? requestedEndDate : existingEndDate;
     if (enrolmentDateValidationEnabled() && requestedEnrollmentEndDate != null
-        && (requestedEnrollmentEndDate.after(requestedStartDate))) {
+        && (requestedEnrollmentEndDate.before(requestedStartDate))) {
       throw new ProjectCommonException(
           ResponseCode.enrollmentEndDateStartError.getErrorCode(),
           ResponseCode.enrollmentEndDateStartError.getErrorMessage(),
