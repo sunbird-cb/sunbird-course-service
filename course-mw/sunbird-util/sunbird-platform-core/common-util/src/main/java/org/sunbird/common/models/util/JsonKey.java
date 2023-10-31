@@ -1086,6 +1086,13 @@ public final class JsonKey {
   public static final String IS_ADMIN_API = "isAdminAPI";
   public static final String RETIRED_COURE_ENABLED = "retiredCoursesEnabled";
   public static final String FALSE = "false";
-    
+  public static final String LMS_SERVICE_HOST = "lms.service.host";
+  public static final String SUNBIRD_BATCH_UPDATE_NOTIFICATIONS_ENABLED =
+          "sunbird_batch_update_notification_enabled";
+
+  public static final String REGARDS = "regards";
+  public static final String SUNBIRD_BATCH_DATE_UPDATE_NOTIFICATIONS_SUBJECT = "sunbird_batch_date_update_notifications_subject" ;
+  public static final String LMS_SEND_EMAIL_NOTIFICATION_PATH = "lms.send.email.notification";
+
   private JsonKey() {}
 }

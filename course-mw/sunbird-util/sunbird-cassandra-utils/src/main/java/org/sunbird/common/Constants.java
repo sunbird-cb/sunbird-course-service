@@ -64,4 +64,23 @@ public interface Constants {
   public static final String GT = ">";
   public static final String ID = "id";
   public static final Integer DEFAULT_LIMIT = 250;
+  public static final String CONTENT_TYPE = "Content-Type";
+  public static final String APPLICATION_JSON = "application/json";
+  public static final String OLD_COURSE_BATCH = "oldCourseBatch";
+  public static final String UPDATED_COURSE_BATCH = "updatedCourseBatch";
+  public static final String REQUEST_CONTEXT = "requestContext";
+  public static final String COURSE_NAME = "courseName";
+  public static final String BATCH_NAME = "batchName";
+  public static final String RECIPIENT_IDS = "recipientUserIds";
+  public static final String TRAINING_NAME = "trainingName";
+  public static final String START_DATE = "startDate";
+  public static final String END_DATE = "endDate";
+  public static final String ENROLLMENT_END_DATE = "enrollmentEndDate";
+  public static final String BATCH_DATE_UPDATE_TEMPLATE = "batchdateupdatetemplate";
+  public static final String EMAIL_BODY = "emailBody";
+  public static final String KARMAYOGI_BHARAT = "Karmayogi Bharat";
+
+
+
+
 }

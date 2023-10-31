@@ -233,6 +233,10 @@ public class CourseBatchManagementActor extends BaseActor {
     if (courseNotificationActive()) {
       batchOperationNotifier(actorMessage, courseBatch, participantsMap);
     }
+    if (batchDatesUpdateNotificationActive()) {
+      batchDatesUpdateNotifier(actorMessage, courseBatch, oldBatch);
+    }
+
   }
 
   private Map<String, Object> getMentorLists(
@@ -728,6 +732,24 @@ public class CourseBatchManagementActor extends BaseActor {
     return Boolean.parseBoolean(
             PropertiesCache.getInstance()
                     .getProperty(JsonKey.COURSE_BATCH_ENROLL_END_DATE_LESS));
+  }
+  private boolean batchDatesUpdateNotificationActive() {
+    return Boolean.parseBoolean(
+            PropertiesCache.getInstance()
+                    .getProperty(JsonKey.SUNBIRD_BATCH_UPDATE_NOTIFICATIONS_ENABLED));
+  }
+
+  private void batchDatesUpdateNotifier(Request actorMessage, CourseBatch updatedCourseBatch, CourseBatch oldCourseBatch) {
+    Request batchNotification = new Request(actorMessage.getRequestContext());
+    batchNotification.getContext().putAll(actorMessage.getContext());
+    batchNotification.setOperation(ActorOperations.COURSE_BATCH_DATE_NOTIFICATION.getValue());
+    Map<String, Object> request = new HashMap<>();
+    request.put(Constants.OLD_COURSE_BATCH, oldCourseBatch);
+    request.put(Constants.UPDATED_COURSE_BATCH, updatedCourseBatch);
+    request.put(Constants.REQUEST_CONTEXT, actorMessage.getRequestContext());
+    request.put(Constants.REQUEST_CONTEXT,actorMessage.getRequest());
+    batchNotification.setRequest(request);
+    courseBatchNotificationActorRef.tell(batchNotification, getSelf());
   }
 
 }
