@@ -836,6 +836,9 @@ public enum ResponseCode {
   currentBatchSizeInvalid(
           ResponseMessage.Key.CURRENT_BATCH_SIZE_INVALID,
           ResponseMessage.Message.CURRENT_BATCH_SIZE_PARAMETER),
+  courseDoesNotHaveBatch(
+          ResponseMessage.Key.COURSE_DOES_NOT_HAVE_BATCH,
+          ResponseMessage.Message.COURSE_DOES_NOT_HAVE_BATCH),
 
   accessDeniedToEnrolOrUnenrolCourse(ResponseMessage.Key.USER_DOES_NOT_HAVE_ACCESS,ResponseMessage.Message.USER_DOES_NOT_HAVE_ACCESS),
   OK(200),

@@ -220,8 +220,8 @@ class RedisCacheUtil {
       * @param ttl
       * @return
       */
-    def getList(key: String, handler: (String) => List[String] = defaultListHandler, ttl: Int = 0): List[String] = {
-        val jedis = getConnection
+    def getList(key: String, handler: (String) => List[String] = defaultListHandler, ttl: Int = 0, index: Int = 0): List[String] = {
+        val jedis = getConnection(index)
         try {
             var data = jedis.smembers(key).asScala.toList
             if (null != handler && (null == data || data.isEmpty)) {
@@ -327,4 +327,6 @@ class RedisCacheUtil {
         //Default Implementation Can Be Provided Here
         List()
     }
+
+    def getList(key: String, index: Int): List[String] = getList(key, defaultListHandler, 0, index)
 }
