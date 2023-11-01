@@ -233,6 +233,9 @@ public class CourseBatchManagementActor extends BaseActor {
     if (courseNotificationActive()) {
       batchOperationNotifier(actorMessage, courseBatch, participantsMap);
     }
+    if (batchDatesUpdateNotificationActive()) {
+      batchDatesUpdateNotifier(actorMessage, courseBatch, oldBatch);
+    }
   }
 
   private Map<String, Object> getMentorLists(
@@ -730,4 +733,64 @@ public class CourseBatchManagementActor extends BaseActor {
                     .getProperty(JsonKey.COURSE_BATCH_ENROLL_END_DATE_LESS));
   }
 
+  private void updateStartBatchesStatus(Request actorMessage){
+
+    //Construct Search DTO
+    SearchDTO dto = new SearchDTO();
+    Map<String, Object> filterMap = new HashMap<>();
+    HashMap<String,String> val = new HashMap<String,String>();
+    val.put(Constants.LTE,new SimpleDateFormat(Constants.DATE_FORMAT).format(new Date()));
+    filterMap.put(JsonKey.START_DATE,val);
+    filterMap.put(JsonKey.STATUS,0);
+    dto.getAdditionalProperties().put(JsonKey.FILTERS, filterMap);
+    Future future = esService.search(actorMessage.getRequestContext(), dto, ProjectUtil.EsType.courseBatch.getTypeName());
+    HashMap<String,Object> res = (HashMap<String,Object> )ElasticSearchHelper.getResponseFromFuture(future);
+    if(res == null){
+      logger.info(actorMessage.getRequestContext(),"No batches to update status");
+      return;
+    }
+    ArrayList<HashMap<String,Object>> contents = (ArrayList<HashMap<String,Object>>) res.get(JsonKey.CONTENT);
+    if(contents == null){
+      logger.info(actorMessage.getRequestContext(),"No batches to update status");
+      return;
+    }
+    //Headers
+    HashMap<String,String> headers = new HashMap<>();
+    headers.put( HttpHeaders.AUTHORIZATION, JsonKey.BEARER + System.getenv(JsonKey.SUNBIRD_AUTHORIZATION));
+    headers.put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+    headers.put("Connection", "Keep-Alive");
+    for(HashMap<String, Object> content:contents){
+      String identifier = (String)content.get(JsonKey.IDENTIFIER);
+      content.put(JsonKey.ID,identifier);
+      content.remove(JsonKey.IDENTIFIER);
+      Request  updateRequest =  new Request();
+      updateRequest.getContext().put(JsonKey.HEADER,headers);
+      updateRequest.setRequest(content);
+      try {
+        updateCourseBatch(updateRequest,true);
+        logger.info(actorMessage.getRequestContext(),"Batch status updated for batchId :"+identifier);
+      } catch (Exception e) {
+        logger.error(actorMessage.getRequestContext(),"Error while updating batch "+identifier,e);
+      }
+    }
+  }
+
+  private void batchDatesUpdateNotifier(Request actorMessage, CourseBatch updatedCourseBatch, CourseBatch oldCourseBatch) {
+    Request batchNotification = new Request(actorMessage.getRequestContext());
+    batchNotification.getContext().putAll(actorMessage.getContext());
+    batchNotification.setOperation(ActorOperations.COURSE_BATCH_DATE_NOTIFICATION.getValue());
+    Map<String, Object> request = new HashMap<>();
+    request.put(Constants.OLD_COURSE_BATCH, oldCourseBatch);
+    request.put(Constants.UPDATED_COURSE_BATCH, updatedCourseBatch);
+    request.put(Constants.REQUEST_CONTEXT, actorMessage.getRequestContext());
+    request.put(Constants.REQUEST_CONTEXT, actorMessage.getRequest());
+    batchNotification.setRequest(request);
+    courseBatchNotificationActorRef.tell(batchNotification, getSelf());
+  }
+
+  private boolean batchDatesUpdateNotificationActive() {
+    return Boolean.parseBoolean(
+            PropertiesCache.getInstance()
+                    .getProperty(JsonKey.SUNBIRD_BATCH_UPDATE_NOTIFICATIONS_ENABLED));
+  }
 }

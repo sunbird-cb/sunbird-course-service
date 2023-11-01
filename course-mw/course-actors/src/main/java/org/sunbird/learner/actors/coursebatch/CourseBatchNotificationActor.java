@@ -1,25 +1,31 @@
 package org.sunbird.learner.actors.coursebatch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.commons.collections.CollectionUtils;
 import org.sunbird.actor.base.BaseActor;
+import org.sunbird.common.Constants;
 import org.sunbird.common.models.util.ActorOperations;
 import org.sunbird.common.models.util.JsonKey;
 import org.sunbird.common.models.util.LoggerUtil;
 import org.sunbird.common.models.util.PropertiesCache;
 import org.sunbird.common.request.Request;
 import org.sunbird.common.request.RequestContext;
+import org.sunbird.common.responsecode.ResponseCode;
 import org.sunbird.common.util.JsonUtil;
+import org.sunbird.learner.actors.coursebatch.dao.BatchUserDao;
+import org.sunbird.learner.actors.coursebatch.dao.impl.BatchUserDaoImpl;
 import org.sunbird.learner.util.ContentUtil;
 import org.sunbird.learner.util.CourseBatchSchedulerUtil;
+import org.sunbird.models.batch.user.BatchUser;
 import org.sunbird.models.course.batch.CourseBatch;
 import org.sunbird.userorg.UserOrgService;
 import org.sunbird.userorg.UserOrgServiceImpl;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Actor responsible to sending email notifications to participants and mentors in open and
@@ -34,6 +40,8 @@ public class CourseBatchNotificationActor extends BaseActor {
   private static String courseBatchPath =
           PropertiesCache.getInstance().getProperty(JsonKey.COURSE_BATCH_PATH);
   private UserOrgService userOrgService = UserOrgServiceImpl.getInstance();
+  private BatchUserDao batchUserDao = new BatchUserDaoImpl();
+  private ObjectMapper mapper = new ObjectMapper();
 
   @Override
   public void onReceive(Request request) throws Throwable {
@@ -42,6 +50,8 @@ public class CourseBatchNotificationActor extends BaseActor {
     if (requestedOperation.equals(ActorOperations.COURSE_BATCH_NOTIFICATION.getValue())) {
       logger.info(request.getRequestContext(), "CourseBatchNotificationActor:onReceive: operation = " + request.getOperation());
       courseBatchNotification(request);
+    } else if (requestedOperation.equals(ActorOperations.COURSE_BATCH_DATE_NOTIFICATION.getValue())) {
+      courseBatchDatesUpdateNotification(request);
     } else {
       logger.error(request.getRequestContext(), "CourseBatchNotificationActor:onReceive: Unsupported operation = "
               + request.getOperation(), null);
@@ -185,4 +195,79 @@ public class CourseBatchNotificationActor extends BaseActor {
                       + e.getMessage(), e);
     }
   }
+
+  private void courseBatchDatesUpdateNotification(Request request) throws UnirestException {
+    CourseBatch oldCourseBatch = (CourseBatch) request.getRequest().get("oldCourseBatch");
+    CourseBatch updatedCourseBatch = (CourseBatch) request.getRequest().get("updatedCourseBatch");
+    RequestContext context = (RequestContext) request.getRequest().get("requestContext");
+    Map<String, Object> requestBody = (Map<String, Object>) request.getRequest().get("requestBody");
+    Map<String, Object> batchAttributes = (Map<String, Object>) requestBody.get("batchAttributes");
+    List<String> mentorsIds = (List<String>) requestBody.get("mentors");
+    List<String> reciepientList = new ArrayList<>();
+    reciepientList.addAll(mentorsIds);
+    if (null != batchAttributes) {
+      List<Map<String, Object>> sessionDetails = (List<Map<String, Object>>) batchAttributes.get("sessionDetails_v2");
+      if (null != sessionDetails) {
+        for (Map<String, Object> sessionDetail : sessionDetails) {
+          List<String> facilatorIds = (List<String>) sessionDetail.get("facilatorIDs");
+          reciepientList.addAll(facilatorIds);
+        }
+      }
+    }
+    List<BatchUser> batchUsers = batchUserDao.readById(context, updatedCourseBatch.getBatchId());
+    List<String> batchUserIdList = batchUsers.stream().filter(e -> e.getActive()).map(user -> user.getUserId()).collect(Collectors.toList());
+    reciepientList.addAll(batchUserIdList);
+    sendEmailNotificationMailForBatchDatesUpdate(reciepientList, oldCourseBatch, updatedCourseBatch);
+  }
+
+  private void sendEmailNotificationMailForBatchDatesUpdate(List<String> reciepientList, CourseBatch oldBatch, CourseBatch updatedBatch) {
+    Map<String, Object> request = new HashMap<>();
+    request.put(Constants.COURSE_NAME, updatedBatch.getName());
+    request.put(Constants.BATCH_NAME, updatedBatch.getDescription());
+    request.put(Constants.RECIPIENT_IDS, reciepientList);
+    request.put(JsonKey.SUBJECT, getBatchUpdateEmailSubject());
+    request.put(Constants.TRAINING_NAME, updatedBatch.getName());
+    request.put(JsonKey.REGARDS, Constants.KARMAYOGI_BHARAT);
+    request.put(JsonKey.EMAIL_TEMPLATE_TYPE, Constants.BATCH_DATE_UPDATE_TEMPLATE);
+    request.put(Constants.START_DATE, updatedBatch.getStartDate());
+    request.put(Constants.END_DATE, updatedBatch.getEndDate());
+    request.put(Constants.ENROLLMENT_END_DATE, updatedBatch.getEnrollmentEndDate());
+    request.put(JsonKey.BODY, Constants.EMAIL_BODY);
+    HashMap<String, String> headers = new HashMap<>();
+    headers.put(Constants.CONTENT_TYPE, Constants.APPLICATION_JSON);
+    HashMap<String, Object> requestBody = new HashMap<>();
+    requestBody.put(JsonKey.REQUEST, request);
+    StringBuilder url = new StringBuilder();
+    HttpResponse<String> httpResponse = null;
+    String requeststr = null;
+    try {
+      requeststr = mapper.writeValueAsString(requestBody);
+      url.append(getLearnerHost()).append(getLearnerPath());
+      httpResponse = Unirest.post(String.valueOf(url)).headers(headers).body(requeststr).asString();
+      if (httpResponse != null && !ResponseCode.OK.equals(httpResponse.getStatus())) {
+        throw new RuntimeException("An error occured while sending mail notification");
+      }
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        logger.error(null, e.getMessage() + "Headers : " + httpResponse.getHeaders() + "Body : " + httpResponse.getBody(), e);
+      }
+      logger.error(null, "Exception occurred with error message = " + e.getMessage(), e);
+    }
+  }
+
+  private String getLearnerHost() {
+    return PropertiesCache.getInstance()
+            .getProperty(JsonKey.LMS_SERVICE_HOST);
+  }
+
+  private String getLearnerPath() {
+    return PropertiesCache.getInstance()
+            .getProperty(JsonKey.LMS_SEND_EMAIL_NOTIFICATION_PATH);
+  }
+
+  private String getBatchUpdateEmailSubject() {
+    return PropertiesCache.getInstance()
+            .getProperty(JsonKey.SUNBIRD_BATCH_DATE_UPDATE_NOTIFICATIONS_SUBJECT);
+  }
 }
+

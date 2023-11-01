@@ -15,6 +15,7 @@ import org.sunbird.models.batch.user.BatchUser;
 import org.sunbird.common.models.util.LoggerUtil;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class BatchUserDaoImpl implements BatchUserDao{
     }
 
     @Override
-    public BatchUser readById(RequestContext requestContext, String batchId) {
+    public List<BatchUser> readById(RequestContext requestContext, String batchId) {
         Map<String, Object> primaryKey = new HashMap<>();
         primaryKey.put(JsonKey.BATCH_ID, batchId);
         Response response = cassandraOperation.getRecordByIdentifier(requestContext, KEYSPACE_NAME, ENROLLMENT_BATCH, primaryKey, null);
@@ -47,7 +48,16 @@ public class BatchUserDaoImpl implements BatchUserDao{
             if (CollectionUtils.isEmpty(batchUserList)) {
                 return null;
             }
-            return mapper.convertValue((Map<String, Object>) batchUserList.get(0), BatchUser.class);
+            //return mapper.convertValue((Map<String, Object>) batchUserList.get(0), BatchUser.class);
+            List<BatchUser> batchUsers = new ArrayList<>();
+            for (Map<String, Object> userDetail : batchUserList) {
+                BatchUser batchUser = new BatchUser();
+                batchUser.setBatchId((String) userDetail.get("batchId"));
+                batchUser.setUserId((String) userDetail.get("userId"));
+                batchUser.setActive((Boolean) userDetail.get("active"));
+                batchUsers.add(batchUser);
+            }
+            return batchUsers;
         } catch (Exception e) {
             logger.error(requestContext, "Failed to read BatchUser Table. Exception: ", e);
             return null;
