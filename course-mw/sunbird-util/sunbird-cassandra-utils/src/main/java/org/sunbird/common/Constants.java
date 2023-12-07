@@ -80,4 +80,5 @@ public interface Constants {
   public static final String BATCH_DATE_UPDATE_TEMPLATE = "batchdateupdatetemplate";
   public static final String EMAIL_BODY = "emailBody";
   public static final String KARMAYOGI_BHARAT = "Karmayogi Bharat";
+  public static final String  REQUEST_BODY = "requestBody";
 }

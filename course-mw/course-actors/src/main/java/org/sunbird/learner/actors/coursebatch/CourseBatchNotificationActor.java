@@ -199,27 +199,36 @@ public class CourseBatchNotificationActor extends BaseActor {
   private void courseBatchDatesUpdateNotification(Request request) throws UnirestException {
     RequestContext requestContext = request.getRequestContext();
     logger.info(requestContext,"Entered CourseBatchNotificationActor :: courseBatchDatesUpdateNotification Request Recieved : " + request);
-    CourseBatch oldCourseBatch = (CourseBatch) request.getRequest().get("oldCourseBatch");
-    CourseBatch updatedCourseBatch = (CourseBatch) request.getRequest().get("updatedCourseBatch");
+    CourseBatch oldCourseBatch = (CourseBatch) request.getRequest().get(Constants.OLD_COURSE_BATCH);
+    CourseBatch updatedCourseBatch = (CourseBatch) request.getRequest().get(Constants.UPDATED_COURSE_BATCH);
 
-    Map<String, Object> requestBody = (Map<String, Object>) request.getRequest().get("requestBody");
+    Map<String, Object> requestBody = (Map<String, Object>) request.getRequest().get(Constants.REQUEST_BODY);
     Map<String, Object> batchAttributes = (Map<String, Object>) requestBody.get("batchAttributes");
     List<String> mentorsIds = (List<String>) requestBody.get("mentors");
+    logger.info(requestContext,"Received Mentors from the Batch Update Request : " + mentorsIds);
     List<String> reciepientList = new ArrayList<>();
     reciepientList.addAll(mentorsIds);
     if (null != batchAttributes) {
       List<Map<String, Object>> sessionDetails = (List<Map<String, Object>>) batchAttributes.get("sessionDetails_v2");
       if (null != sessionDetails) {
         for (Map<String, Object> sessionDetail : sessionDetails) {
-          List<String> facilatorIds = (List<String>) sessionDetail.get("facilatorIDs");
-          reciepientList.addAll(facilatorIds);
+          List<String> facilitatorIds = (List<String>) sessionDetail.get("facilatorIDs");
+          if(CollectionUtils.isNotEmpty(facilitatorIds)){
+            reciepientList.addAll(facilitatorIds);
+          }
+          logger.info(requestContext,"Received facilitators from the Batch Update Request : "  + facilitatorIds);
         }
       }
     }
     List<BatchUser> batchUsers = batchUserDao.readById(requestContext, updatedCourseBatch.getBatchId());
-    List<String> batchUserIdList = batchUsers.stream().filter(e -> e.getActive()).map(user -> user.getUserId()).collect(Collectors.toList());
+    List<String> batchUserIdList = new ArrayList<>();
+    for(BatchUser batchUser : batchUsers){
+      if(null != batchUser.getActive() && batchUser.getActive()){
+        batchUserIdList.add(batchUser.getUserId());
+      }
+    }
     reciepientList.addAll(batchUserIdList);
-    logger.info(requestContext,"Recieved ActiveUsers from enrollment_batch_lookup : " + batchUserIdList);
+    logger.info(requestContext,"Recieved Active Users from enrollment_batch_lookup : " + batchUserIdList);
     sendEmailNotificationMailForBatchDatesUpdate(requestContext,reciepientList, oldCourseBatch, updatedCourseBatch);
   }
 

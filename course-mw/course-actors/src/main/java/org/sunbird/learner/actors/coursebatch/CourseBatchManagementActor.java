@@ -823,7 +823,7 @@ public class CourseBatchManagementActor extends BaseActor {
     request.put(Constants.OLD_COURSE_BATCH, oldCourseBatch);
     request.put(Constants.UPDATED_COURSE_BATCH, updatedCourseBatch);
     request.put(Constants.REQUEST_CONTEXT, actorMessage.getRequestContext());
-    request.put(Constants.REQUEST_CONTEXT, actorMessage.getRequest());
+    request.put(Constants.REQUEST_BODY, actorMessage.getRequest());
     batchNotification.setRequest(request);
     courseBatchNotificationActorRef.tell(batchNotification, getSelf());
   }
