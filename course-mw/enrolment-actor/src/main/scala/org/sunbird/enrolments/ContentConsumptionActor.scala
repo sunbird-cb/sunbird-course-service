@@ -479,7 +479,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
             val batchDetailsList: List[java.util.Map[String, AnyRef]] = getBatchesV2(requestContext, batchId, courseId, null).toList
             if (!batchDetailsList.isEmpty) {
                 val batchDetails: java.util.Map[String, AnyRef] = batchDetailsList.get(0)
-                if (!batchDetails.get(JsonKey.STATUS).equals(null) && !batchDetails.get(JsonKey.STATUS).equals(1)) {
+                if (!batchDetails.get(JsonKey.STATUS).equals(null) && !batchDetails.get(JsonKey.STATUS).equals(2)) {
                     val validUserIds = List(requestedBy, requestedFor).filter(p => StringUtils.isNotBlank(p))
                     val primaryUserId = if (StringUtils.isNotBlank(requestedFor)) requestedFor else requestedBy
                     val userId = inputContent.get(JsonKey.USER_ID).asInstanceOf[String]
