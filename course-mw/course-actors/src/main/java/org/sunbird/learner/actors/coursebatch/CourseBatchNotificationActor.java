@@ -222,9 +222,11 @@ public class CourseBatchNotificationActor extends BaseActor {
     }
     List<BatchUser> batchUsers = batchUserDao.readById(requestContext, updatedCourseBatch.getBatchId());
     List<String> batchUserIdList = new ArrayList<>();
-    for(BatchUser batchUser : batchUsers){
-      if(null != batchUser.getActive() && batchUser.getActive()){
-        batchUserIdList.add(batchUser.getUserId());
+    if(null != batchUsers){
+      for(BatchUser batchUser : batchUsers){
+        if(null != batchUser.getActive() && batchUser.getActive()){
+          batchUserIdList.add(batchUser.getUserId());
+        }
       }
     }
     reciepientList.addAll(batchUserIdList);
@@ -257,7 +259,7 @@ public class CourseBatchNotificationActor extends BaseActor {
       url.append(getLearnerHost()).append(getLearnerPath());
       httpResponse = Unirest.post(String.valueOf(url)).headers(headers).body(requeststr).asString();
       logger.info(requestContext, "Notification sent successfully, response is : " + httpResponse);
-      if (httpResponse != null && !ResponseCode.OK.equals(httpResponse.getStatus())) {
+      if (httpResponse == null || !ResponseCode.OK.equals(httpResponse.getStatus())) {
         throw new RuntimeException("An error occured while sending mail notification");
       }
     } catch (Exception e) {
