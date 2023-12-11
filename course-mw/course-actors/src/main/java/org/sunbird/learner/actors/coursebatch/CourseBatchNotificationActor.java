@@ -258,12 +258,15 @@ public class CourseBatchNotificationActor extends BaseActor {
       requeststr = mapper.writeValueAsString(requestBody);
       url.append(getLearnerHost()).append(getLearnerPath());
       httpResponse = Unirest.post(String.valueOf(url)).headers(headers).body(requeststr).asString();
-      logger.info(requestContext, "Notification sent successfully, response is : " + httpResponse);
-      if (httpResponse == null || !ResponseCode.OK.equals(httpResponse.getStatus())) {
-        throw new RuntimeException("An error occured while sending mail notification");
+      if (httpResponse != null) {
+        if(ResponseCode.OK.getResponseCode() != httpResponse.getStatus())
+          throw new RuntimeException("An error occurred while sending mail notification, the response status is: " + httpResponse.getStatusText());
+      } else{
+        throw new RuntimeException("The Request could not be sent, response is : " + httpResponse);
       }
+      logger.info(requestContext, "Notification sent successfully, response is : " + httpResponse.getStatusText());
     } catch (Exception e) {
-      if (e instanceof RuntimeException) {
+      if (e instanceof RuntimeException && null != httpResponse) {
         logger.error(null, e.getMessage() + "Headers : " + httpResponse.getHeaders() + "Body : " + httpResponse.getBody(), e);
       }
       logger.error(null, "Exception occurred with error message = " + e.getMessage(), e);
