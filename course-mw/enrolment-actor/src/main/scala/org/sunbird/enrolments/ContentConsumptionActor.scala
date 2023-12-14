@@ -473,13 +473,14 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
     def processContentsV2(contentList: java.util.List[java.util.Map[String, AnyRef]], requestContext: RequestContext, requestedBy: String, requestedFor: String, request: Request): Option[Response] = {
         if (CollectionUtils.isNotEmpty(contentList)) {
             val responseMessage = new java.util.HashMap[String, AnyRef]()
+            val contentIds: util.List[String] = new util.ArrayList[String]()
             val inputContent: util.Map[String, AnyRef] = contentList.get(0)
             val batchId = inputContent.get(JsonKey.BATCH_ID).asInstanceOf[String]
             val courseId = inputContent.get(JsonKey.COURSE_ID).asInstanceOf[String]
             val batchDetailsList: List[java.util.Map[String, AnyRef]] = getBatchesV2(requestContext, batchId, courseId, null).toList
             if (!batchDetailsList.isEmpty) {
                 val batchDetails: java.util.Map[String, AnyRef] = batchDetailsList.get(0)
-                if (!batchDetails.get(JsonKey.STATUS).equals(null) && !batchDetails.get(JsonKey.STATUS).equals(2)) {
+                if (null != batchDetails.get(JsonKey.STATUS) && 2 != batchDetails.get(JsonKey.STATUS)) {
                     val validUserIds = List(requestedBy, requestedFor).filter(p => StringUtils.isNotBlank(p))
                     val primaryUserId = if (StringUtils.isNotBlank(requestedFor)) requestedFor else requestedBy
                     if (StringUtils.isBlank(inputContent.get(JsonKey.USER_ID).asInstanceOf[String]))
@@ -487,7 +488,6 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                     val userId = inputContent.get(JsonKey.USER_ID).asInstanceOf[String]
                     if (validUserIds.contains(userId)) {
                         val contentId = inputContent.get(JsonKey.CONTENT_ID).asInstanceOf[String]
-                        val contentIds: util.List[String] = new util.ArrayList[String]()
                         contentIds.add(contentId)
                         val existingContents = getContentsConsumption(userId, courseId, contentIds, batchId, requestContext).groupBy(x => x.get("contentId").asInstanceOf[String]).map(e => e._1 -> e._2.toList.head).toMap
                         val existingContent = existingContents.getOrElse(contentId, new java.util.HashMap[String, AnyRef])
@@ -500,22 +500,14 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
                         cassandraOperation.batchInsertLogged(requestContext, consumptionDBInfo.getKeySpace, consumptionDBInfo.getTableName, updatedContentList)
                         val updateData = getLatestReadDetails(userId, batchId, updatedContentList.asInstanceOf[List[java.util.Map[String, AnyRef]]])
                         cassandraOperation.updateRecordV2(requestContext, enrolmentDBInfo.getKeySpace, enrolmentDBInfo.getTableName, updateData._1, updateData._2, true)
-                        contentIds.map(id => responseMessage.put(id, JsonKey.SUCCESS))
-                    } else {
-                        logger.info(requestContext, "ContentConsumptionActor: addContent : User Id is invalid : " + userId)
-                        throw new ProjectCommonException(ResponseCode.invalidRequestData.getErrorCode,
-                            s"""User Id is invalid, userId: $userId, batchId: $batchId, courseId: $courseId""", ResponseCode.CLIENT_ERROR.getResponseCode)
                     }
-                } else {
-                    logger.info(requestContext, "ContentConsumptionActor: addContent : batch is not active batchId: " + batchId + "couseId:" + courseId)
-                    throw new ProjectCommonException(ResponseCode.invalidRequestData.getErrorCode,
-                        s"""batch is not active, batchId: $batchId, courseId: $courseId""", ResponseCode.CLIENT_ERROR.getResponseCode)
                 }
             } else {
                 logger.info(requestContext, "ContentConsumptionActor: addContent : No batch details found for batchId: " + batchId + "couseId:" + courseId)
                 throw new ProjectCommonException(ResponseCode.invalidRequestData.getErrorCode,
                     s"""No batch details found for, batchId: $batchId, courseId: $courseId""", ResponseCode.CLIENT_ERROR.getResponseCode)
             }
+            contentIds.map(id => responseMessage.put(id, JsonKey.SUCCESS))
             val response = new Response()
             response.putAll(responseMessage)
             Option(response)
