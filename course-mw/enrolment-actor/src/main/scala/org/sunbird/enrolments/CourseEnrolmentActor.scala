@@ -168,9 +168,20 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
 
     def addCourseDetails(activeEnrolments: java.util.List[java.util.Map[String, AnyRef]], courseIds: java.util.List[String] , request:Request, flag:Boolean): java.util.List[java.util.Map[String, AnyRef]] = {
-        val requestBody: String =  prepareSearchRequest(courseIds, request, flag)
-        val searchResult:java.util.Map[String, AnyRef] = ContentSearchUtil.searchContentSync(request.getRequestContext, request.getContext.getOrDefault(JsonKey.URL_QUERY_STRING,"").asInstanceOf[String], requestBody, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
-        val coursesList: java.util.List[java.util.Map[String, AnyRef]] = searchResult.getOrDefault(JsonKey.CONTENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]]
+        val coursesList = new java.util.ArrayList[java.util.Map[String, AnyRef]]();
+        val searchIdentifierMaxSize = Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.SEARCH_IDENTIFIER_MAX_SIZE));
+        if (courseIds.size() > searchIdentifierMaxSize) {
+            for (i <- 0 to courseIds.size() by searchIdentifierMaxSize) {
+                val courseIdsSubList: java.util.List[String] = courseIds.subList(i, Math.min(courseIds.size(), i + searchIdentifierMaxSize));
+                val requestBody: String = prepareSearchRequest(courseIdsSubList, request, flag)
+                val searchResult: java.util.Map[String, AnyRef] = ContentSearchUtil.searchContentSync(request.getRequestContext, request.getContext.getOrDefault(JsonKey.URL_QUERY_STRING, "").asInstanceOf[String], requestBody, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+                coursesList.addAll(searchResult.getOrDefault(JsonKey.CONTENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]])
+            }
+        } else {
+            val requestBody: String = prepareSearchRequest(courseIds, request, flag)
+            val searchResult: java.util.Map[String, AnyRef] = ContentSearchUtil.searchContentSync(request.getRequestContext, request.getContext.getOrDefault(JsonKey.URL_QUERY_STRING, "").asInstanceOf[String], requestBody, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+            coursesList.addAll(searchResult.getOrDefault(JsonKey.CONTENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]])
+        }
         val coursesMap = {
             if(CollectionUtils.isNotEmpty(coursesList)) {
                 coursesList.map(ev => ev.get(JsonKey.IDENTIFIER).asInstanceOf[String] -> ev).toMap
@@ -216,7 +227,16 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def addBatchDetails(enrolmentList: util.List[util.Map[String, AnyRef]], request: Request): util.List[util.Map[String, AnyRef]] = {
         val batchIds:java.util.List[String] = enrolmentList.map(e => e.getOrDefault(JsonKey.BATCH_ID, "").asInstanceOf[String]).distinct.filter(id => StringUtils.isNotBlank(id)).toList.asJava
-        val batchDetails = searchBatchDetails(batchIds, request)
+        val batchDetails = new java.util.ArrayList[java.util.Map[String, AnyRef]]();
+        val searchIdentifierMaxSize = Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.SEARCH_IDENTIFIER_MAX_SIZE));
+        if (batchIds.size() > searchIdentifierMaxSize) {
+            for (i <- 0 to batchIds.size() by searchIdentifierMaxSize) {
+                val batchIdsSubList: java.util.List[String] = batchIds.subList(i, Math.min(batchIds.size(), i + searchIdentifierMaxSize));
+                batchDetails.addAll(searchBatchDetails(batchIdsSubList, request))
+            }
+        } else {
+           batchDetails.addAll(searchBatchDetails(batchIds, request))
+        }
         if(CollectionUtils.isNotEmpty(batchDetails)){
             val batchMap = batchDetails.map(b => b.get(JsonKey.BATCH_ID).asInstanceOf[String] -> b).toMap
             enrolmentList.map(enrolment => {

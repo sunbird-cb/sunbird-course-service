@@ -1119,5 +1119,6 @@ public final class JsonKey {
   public static final String TIME_SPENT_ON_COMPLETED_COURSES = "timeSpentOnCompletedCourses";
   public static final String CERITFICATES_ISSUED = "certificatesIssued";
   public static final String COURSES_IN_PROGRESS = "coursesInProgress";
+  public static final String SEARCH_IDENTIFIER_MAX_SIZE ="search_identifier_max_size";
   private JsonKey() {}
 }
