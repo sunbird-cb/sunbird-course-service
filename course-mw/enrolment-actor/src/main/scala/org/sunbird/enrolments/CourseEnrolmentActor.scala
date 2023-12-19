@@ -184,7 +184,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             logger.info(null, "Is courseIds.size() > searchIdentifierMaxSize :" + false);
             val requestBody: String = prepareSearchRequest(courseIds, request, flag)
             val searchResult: java.util.Map[String, AnyRef] = ContentSearchUtil.searchContentSync(request.getRequestContext, request.getContext.getOrDefault(JsonKey.URL_QUERY_STRING, "").asInstanceOf[String], requestBody, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
-            //coursesList.addAll(searchResult.getOrDefault(JsonKey.CONTENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]])
+            coursesList.addAll(searchResult.getOrDefault(JsonKey.CONTENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]])
             logger.info(null, "Search Result Size " +  searchResult.size())
         }
         val coursesMap = {
@@ -464,9 +464,11 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                     allEnrolledCourses.addAll(enrolmentList)
                 }
                 logger.info(null, "Secure Course Ids : " + secureCourseIds)
-                val secureCourseEnrolmentList: java.util.List[java.util.Map[String, AnyRef]] = addCourseDetails(activeEnrolments, secureCourseIds, request, true)
-                if (secureCourseEnrolmentList != null) {
-                    allEnrolledCourses.addAll(secureCourseEnrolmentList)
+                if(CollectionUtils.isNotEmpty(secureCourseIds)){
+                    val secureCourseEnrolmentList: java.util.List[java.util.Map[String, AnyRef]] = addCourseDetails(activeEnrolments, secureCourseIds, request, true)
+                    if (secureCourseEnrolmentList != null) {
+                        allEnrolledCourses.addAll(secureCourseEnrolmentList)
+                    }
                 }
                 }
                 else {
