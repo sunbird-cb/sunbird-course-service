@@ -168,6 +168,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
 
     def addCourseDetails(activeEnrolments: java.util.List[java.util.Map[String, AnyRef]], courseIds: java.util.List[String] , request:Request, flag:Boolean): java.util.List[java.util.Map[String, AnyRef]] = {
+        logger.info(null,"Entered Add Course Details Method")
         val coursesList = new java.util.ArrayList[java.util.Map[String, AnyRef]]();
         val searchIdentifierMaxSize = Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.SEARCH_IDENTIFIER_MAX_SIZE));
         if (courseIds.size() > searchIdentifierMaxSize) {
@@ -187,6 +188,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                 coursesList.map(ev => ev.get(JsonKey.IDENTIFIER).asInstanceOf[String] -> ev).toMap
             } else Map()
         }
+        logger.info(null,"Active Enrollments :" + activeEnrolments.size())
         activeEnrolments.filter(enrolment => coursesMap.containsKey(enrolment.get(JsonKey.COURSE_ID))).map(enrolment => {
             val courseContent = coursesMap.get(enrolment.get(JsonKey.COURSE_ID))
             enrolment.put(JsonKey.COURSE_NAME, courseContent.get(JsonKey.NAME))
@@ -226,6 +228,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
 
     def addBatchDetails(enrolmentList: util.List[util.Map[String, AnyRef]], request: Request): util.List[util.Map[String, AnyRef]] = {
+        logger.info(null, "Entered Add Batch Details")
         val batchIds:java.util.List[String] = enrolmentList.map(e => e.getOrDefault(JsonKey.BATCH_ID, "").asInstanceOf[String]).distinct.filter(id => StringUtils.isNotBlank(id)).toList.asJava
         val batchDetails = new java.util.ArrayList[java.util.Map[String, AnyRef]]();
         val searchIdentifierMaxSize = Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.SEARCH_IDENTIFIER_MAX_SIZE));
@@ -253,6 +256,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
 
     def addBatchDetails_v2(enrolmentList: util.List[util.Map[String, AnyRef]], request: Request): util.List[util.Map[String, AnyRef]] = {
+        logger.info(null, "Entered addBatchDetails_v2")
         val blendedEnrolments = enrolmentList
           .filter(enrolment =>
               enrolment.get("primaryCategory") == "Blended Program" &&
@@ -396,6 +400,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             enrolment.put("status", getCompletionStatus(progress, leafNodesCount).asInstanceOf[AnyRef])
             enrolment.put("completionPercentage", getCompletionPerc(progress, leafNodesCount).asInstanceOf[AnyRef])
         })
+        logger.info(null, "Enrollments : " + enrolments)
         enrolments
     }
 
@@ -432,11 +437,13 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         logger.info(request.getRequestContext,"CourseEnrolmentActor :: getCachedEnrolmentList :: fetching data from cassandra with userId " + userId)
         //ContentUtil.getAllContent(PropertiesCache.getInstance.getProperty(JsonKey.PAGE_SIZE_CONTENT_FETCH).toInt)
         val activeEnrolments: java.util.List[java.util.Map[String, AnyRef]] = getActiveEnrollments( userId, courseIdList, request.getRequestContext)
+        logger.info(request.getRequestContext,"Active Enrolments : " + activeEnrolments.size())
         val enrolments: java.util.List[java.util.Map[String, AnyRef]] = {
             if (CollectionUtils.isNotEmpty(activeEnrolments)) {
               val allCourseIds: java.util.List[String] = activeEnrolments.map(e => e.getOrDefault(JsonKey.COURSE_ID, "").asInstanceOf[String]).distinct.filter(id => StringUtils.isNotBlank(id)).toList.asJava
                 val courseIds = new java.util.ArrayList[String]()
                 val secureCourseIds = new java.util.ArrayList[String]()
+                logger.info(request.getRequestContext,"All Course IDs : " + allCourseIds)
                 for (courseId <- allCourseIds.asScala) {
                     if (courseId.endsWith("_rc")) {
                         secureCourseIds.add(courseId)
@@ -462,7 +469,9 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                         allEnrolledCourses.addAll(enrolmentList)
                     }
                 }
+                logger.info(null, "All Enrolled Courses: " + allEnrolledCourses);
                 val updatedEnrolmentList = updateProgressData(allEnrolledCourses, userId, allCourseIds, request.getRequestContext)
+                logger.info(null,"Version is "  + version)
                 if(version.equals("v1"))
                 addBatchDetails(updatedEnrolmentList, request)
                 else addBatchDetails_v2(updatedEnrolmentList, request)
@@ -636,6 +645,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
 
     def getUserEnrolmentCourseInfo(finalEnrolment: List[util.Map[String, AnyRef]]) = {
+        logger.info(null, "Entered getUserEnrollmenmentCourseInfo")
         var certificateIssued: Int = 0
         var coursesInProgress: Int = 0
         var hoursSpentOnCompletedCourses: Int = 0
@@ -655,6 +665,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                     certificateIssued += 1
             }
         });
+        logger.info(null, "Time spent: " + hoursSpentOnCompletedCourses + " certificated Issues : " + certificateIssued + " Im Progress " + coursesInProgress);
         val enrolmentCourseDetails = new util.HashMap[String, Int]()
         enrolmentCourseDetails.put(JsonKey.TIME_SPENT_ON_COMPLETED_COURSES, hoursSpentOnCompletedCourses)
         enrolmentCourseDetails.put(JsonKey.CERITFICATES_ISSUED, certificateIssued)
