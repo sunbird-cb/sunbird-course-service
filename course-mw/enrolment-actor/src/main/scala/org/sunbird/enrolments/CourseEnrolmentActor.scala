@@ -172,22 +172,27 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val coursesList = new java.util.ArrayList[java.util.Map[String, AnyRef]]();
         val searchIdentifierMaxSize = Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.SEARCH_IDENTIFIER_MAX_SIZE));
         if (courseIds.size() > searchIdentifierMaxSize) {
+            logger.info(null, "Is courseIds.size() > searchIdentifierMaxSize :" + true);
             for (i <- 0 to courseIds.size() by searchIdentifierMaxSize) {
                 val courseIdsSubList: java.util.List[String] = courseIds.subList(i, Math.min(courseIds.size(), i + searchIdentifierMaxSize));
                 val requestBody: String = prepareSearchRequest(courseIdsSubList, request, flag)
                 val searchResult: java.util.Map[String, AnyRef] = ContentSearchUtil.searchContentSync(request.getRequestContext, request.getContext.getOrDefault(JsonKey.URL_QUERY_STRING, "").asInstanceOf[String], requestBody, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
                 coursesList.addAll(searchResult.getOrDefault(JsonKey.CONTENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]])
+                logger.info(null, "Search Result Size " +  searchResult.size())
             }
         } else {
+            logger.info(null, "Is courseIds.size() > searchIdentifierMaxSize :" + false);
             val requestBody: String = prepareSearchRequest(courseIds, request, flag)
             val searchResult: java.util.Map[String, AnyRef] = ContentSearchUtil.searchContentSync(request.getRequestContext, request.getContext.getOrDefault(JsonKey.URL_QUERY_STRING, "").asInstanceOf[String], requestBody, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
             coursesList.addAll(searchResult.getOrDefault(JsonKey.CONTENTS, new java.util.ArrayList[java.util.Map[String, AnyRef]]()).asInstanceOf[java.util.List[java.util.Map[String, AnyRef]]])
+            logger.info(null, "Search Result Size " +  searchResult.size())
         }
         val coursesMap = {
             if(CollectionUtils.isNotEmpty(coursesList)) {
                 coursesList.map(ev => ev.get(JsonKey.IDENTIFIER).asInstanceOf[String] -> ev).toMap
             } else Map()
         }
+        logger.info(null, "Course List Size " +  coursesList.size())
         logger.info(null,"Active Enrollments :" + activeEnrolments.size())
         activeEnrolments.filter(enrolment => coursesMap.containsKey(enrolment.get(JsonKey.COURSE_ID))).map(enrolment => {
             val courseContent = coursesMap.get(enrolment.get(JsonKey.COURSE_ID))
@@ -458,6 +463,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                 if (enrolmentList != null) {
                     allEnrolledCourses.addAll(enrolmentList)
                 }
+                logger.info(null, "Secure Course Ids : " + secureCourseIds)
                 val secureCourseEnrolmentList: java.util.List[java.util.Map[String, AnyRef]] = addCourseDetails(activeEnrolments, secureCourseIds, request, true)
                 if (secureCourseEnrolmentList != null) {
                     allEnrolledCourses.addAll(secureCourseEnrolmentList)
