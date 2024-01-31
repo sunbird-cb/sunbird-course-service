@@ -122,6 +122,7 @@ public final class JsonKey {
   public static final String CONTACT_DETAILS = "contactDetail";
   public static final String CONTAINER = "container";
   public static final String CONTENT = "content";
+  public static final String CONTENT_BUCKET ="contentBucket";
   public static final String CONTENT_CREATOR = "CONTENT_CREATOR";
   public static final String CONTENT_ID = "contentId";
   public static final String CONTENT_IDS = "contentIds";
@@ -153,6 +154,9 @@ public final class JsonKey {
   public static final String COURSE_IDS = "courseIds";
   public static final String COURSE_LIST = "courseList";
   public static final String COURSE_LOGO_URL = "courseLogoUrl";
+  public static final String COURSE_POSTER_IMAGE ="coursePosterImage";
+  public static final String POSTER_IMAGE ="posterImage";
+  public static final String PROVIDER_NAME ="providerName";
   public static final String COURSE_MANAGEMENT_DB = "courseManagement_db";
   public static final String COURSE_NAME = "courseName";
   public static final String COURSE_PROGRESS = "progress";
