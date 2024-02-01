@@ -122,7 +122,8 @@ public final class JsonKey {
   public static final String CONTACT_DETAILS = "contactDetail";
   public static final String CONTAINER = "container";
   public static final String CONTENT = "content";
-  public static final String CONTENT_BUCKET ="contentBucket";
+  public static final String CONTENT_BUCKET = "content_bucket";
+  public static final String STATIC_HOST_URL = "static_host_url";
   public static final String CONTENT_CREATOR = "CONTENT_CREATOR";
   public static final String CONTENT_ID = "contentId";
   public static final String CONTENT_IDS = "contentIds";
