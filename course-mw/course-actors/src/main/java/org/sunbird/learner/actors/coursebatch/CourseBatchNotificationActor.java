@@ -176,8 +176,8 @@ public class CourseBatchNotificationActor extends BaseActor {
       }
       requestMap.put(JsonKey.COURSE_POSTER_IMAGE, posterImageUrl);
     }
-    requestMap.put(JsonKey.PROVIDER_NAME,contentDetails.get(JsonKey.SOURCE));
-    requestMap.put(JsonKey.PROFILE_UPDATE_LINK, baseUrl+profileUpdateUrl);
+    requestMap.put(JsonKey.PROVIDER_NAME, contentDetails.get(JsonKey.SOURCE));
+    requestMap.put(JsonKey.PROFILE_UPDATE_LINK, baseUrl + profileUpdateUrl);
     requestMap.put(JsonKey.START_DATE, courseBatchObject.get(JsonKey.START_DATE));
     requestMap.put(JsonKey.END_DATE, courseBatchObject.get(JsonKey.END_DATE));
     requestMap.put(JsonKey.COURSE_ID, courseBatchObject.get(JsonKey.COURSE_ID));
