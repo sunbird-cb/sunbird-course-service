@@ -39,6 +39,7 @@ public class CourseBatchNotificationActor extends BaseActor {
       PropertiesCache.getInstance().getProperty(JsonKey.SUNBIRD_WEB_URL);
   private static String contentBucket = PropertiesCache.getInstance().getProperty(JsonKey.CONTENT_BUCKET);
   private static String staticHostUrl = PropertiesCache.getInstance().getProperty(JsonKey.STATIC_HOST_URL);
+  private static String profileUpdateUrl = PropertiesCache.getInstance().getProperty(JsonKey.PROFILE_UPDATE_URL);
   private static String courseBatchPath =
           PropertiesCache.getInstance().getProperty(JsonKey.COURSE_BATCH_PATH);
   private UserOrgService userOrgService = UserOrgServiceImpl.getInstance();
@@ -176,6 +177,7 @@ public class CourseBatchNotificationActor extends BaseActor {
       requestMap.put(JsonKey.COURSE_POSTER_IMAGE, posterImageUrl);
     }
     requestMap.put(JsonKey.PROVIDER_NAME,contentDetails.get(JsonKey.SOURCE));
+    requestMap.put(JsonKey.PROFILE_UPDATE_LINK, baseUrl+profileUpdateUrl);
     requestMap.put(JsonKey.START_DATE, courseBatchObject.get(JsonKey.START_DATE));
     requestMap.put(JsonKey.END_DATE, courseBatchObject.get(JsonKey.END_DATE));
     requestMap.put(JsonKey.COURSE_ID, courseBatchObject.get(JsonKey.COURSE_ID));
