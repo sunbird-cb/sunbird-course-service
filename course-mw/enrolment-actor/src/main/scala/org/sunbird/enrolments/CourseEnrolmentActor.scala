@@ -739,12 +739,12 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                         response.put(userId, map)
                     } else {
                         map.put(JsonKey.STATUS, JsonKey.FAILED)
-                        map.put(JsonKey.ERRORMSG, "user not enrolled")
+                        map.put(JsonKey.ERRORMSG, e.getMessage)
                         response.put(userId, status)
                     }
                 case e: Exception =>
                     map.put(JsonKey.STATUS, JsonKey.FAILED)
-                    map.put(JsonKey.ERRORMSG, "user not enrolled")
+                    map.put(JsonKey.ERRORMSG, e.getMessage)
                     response.put(userId, status)
             }
             resp.put(JsonKey.RESPONSE, response)

@@ -95,11 +95,13 @@ public class CourseEnrollmentRequestValidator extends BaseRequestValidator {
             JsonKey.BATCH_ID);
 
     List<String> userIdList = (List<String>) programRequestDto.getRequest().get(JsonKey.USERID_LIST);
-    validateParamCollection(userIdList,ResponseCode.mandatoryParamsMissing,JsonKey.USERID_LIST);
+    validateParamCollection(
+            userIdList,ResponseCode.mandatoryParamsMissing,
+            JsonKey.USERID_LIST);
     if (userIdList != null&& userIdList.size()<30) {
       for (String userId : userIdList) {
         validateParam(
-                userId,ResponseCode.mandatoryParamsMissing,
+                userId,ResponseCode.invalidParameterValue,
                 JsonKey.USER_ID);
       }
     }

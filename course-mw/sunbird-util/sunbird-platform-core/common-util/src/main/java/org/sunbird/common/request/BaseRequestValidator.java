@@ -502,7 +502,7 @@ public class BaseRequestValidator {
     }
   }
   public void validateParamCollection(List<String> value, ResponseCode error,String errorMsgArgument) {
-    if (CollectionUtils.isEmpty (value)||null==(value)) {
+    if (CollectionUtils.isEmpty (value)) {
       throw new ProjectCommonException(
               error.getErrorCode(),
               MessageFormat.format(error.getErrorMessage(), errorMsgArgument),
