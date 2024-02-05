@@ -37,6 +37,7 @@ import org.sunbird.models.batch.user.BatchUser
 import org.sunbird.telemetry.util.TelemetryUtil
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
 class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") courseBatchNotificationActorRef: ActorRef
@@ -82,6 +83,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             case "unenrol" => unEnroll(request)
             case "listEnrol" => list(request)
             case "enrolProgram" => enrollProgram(request)
+            case "bulkEnrolProgram" => bulkEnrolProgram(request)
             case _ => ProjectCommonException.throwClientErrorException(ResponseCode.invalidRequestData,
                 ResponseCode.invalidRequestData.getErrorMessage)
         }
@@ -691,6 +693,63 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         enrolmentCourseDetails.put(JsonKey.KARMA_POINTS, totalUserKarmaPoints.asInstanceOf[AnyRef])
         enrolmentCourseDetails.put(JsonKey.ADD_INFO, addInfo.asInstanceOf[AnyRef])
         enrolmentCourseDetails
+    }
+
+    def bulkEnrolProgram(request: Request): Unit = {
+        val response: util.Map[String, AnyRef] = new util.HashMap[String, AnyRef]()
+        val status: util.Map[String, AnyRef] = new util.HashMap[String, AnyRef]()
+        val map: util.Map[String, AnyRef] = new util.HashMap[String, AnyRef]()
+        val resp: Response = new Response()
+        val programId: String = request.get(JsonKey.PROGRAM_ID).asInstanceOf[String]
+        val isAdminAPI: Boolean = request.get(JsonKey.IS_ADMIN_API).asInstanceOf[Boolean]
+        val fieldList = List(JsonKey.PRIMARYCATEGORY, JsonKey.IDENTIFIER, JsonKey.BATCHES)
+        val contentData = getContentReadAPIData(programId, fieldList, request)
+
+        if (isAdminAPI && (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.ADMIN_PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])))
+            ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId);
+
+        if (!isAdminAPI && (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.PROGRAM_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String])))
+            ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, programId);
+
+        val userIds = request.get(JsonKey.USERID_LIST).asInstanceOf[java.util.List[String]]
+        val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
+        val batchData: CourseBatch = courseBatchDao.readById(programId, batchId, request.getRequestContext)
+
+        for (userId <- userIds) {
+            try {
+                val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, programId, batchId)
+                val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
+                validateEnrolment(batchData, enrolmentData, true)
+                getCoursesForProgramAndEnrol(request, programId, userId, batchId)
+                val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
+                val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, programId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
+                upsertEnrollment(userId, programId, batchId, data, dataBatch, (null == enrolmentData), request.getRequestContext)
+                logger.info(request.getRequestContext, "ProgramEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
+                cacheUtil.delete(getCacheKey(userId))
+                generatePreProcessorKafkaEvent(request, batchId, programId, userId)
+                generateTelemetryAudit(userId, programId, batchId, data, "enrol", JsonKey.CREATE, request.getContext)
+                notifyUser(userId, batchData, JsonKey.ADD)
+                status.put(JsonKey.STATUS, JsonKey.SUCCESS)
+                response.put(userId, status)
+            } catch {
+                case e: ProjectCommonException =>
+                    if (ResponseCode.userAlreadyEnrolledCourse.getErrorMessage.equals(e.getMessage)) {
+                        map.put(JsonKey.STATUS, JsonKey.FAILED)
+                        map.put(JsonKey.ERRORMSG, ResponseCode.userAlreadyEnrolledCourse.getErrorMessage)
+                        response.put(userId, map)
+                    } else {
+                        map.put(JsonKey.STATUS, JsonKey.FAILED)
+                        map.put(JsonKey.ERRORMSG, e.getMessage)
+                        response.put(userId, status)
+                    }
+                case e: Exception =>
+                    map.put(JsonKey.STATUS, JsonKey.FAILED)
+                    map.put(JsonKey.ERRORMSG, e.getMessage)
+                    response.put(userId, status)
+            }
+            resp.put(JsonKey.RESPONSE, response)
+        }
+        sender().tell(resp, self)
     }
 }
 

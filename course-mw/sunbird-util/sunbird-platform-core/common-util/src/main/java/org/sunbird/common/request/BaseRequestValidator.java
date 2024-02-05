@@ -4,6 +4,8 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
@@ -497,6 +499,14 @@ public class BaseRequestValidator {
       throw new ProjectCommonException(ResponseCode.unAuthorized.getErrorCode(),
               ResponseCode.unAuthorized.getErrorMessage(),
               ResponseCode.UNAUTHORIZED.getResponseCode());
+    }
+  }
+  public void validateParamCollection(List<String> value, ResponseCode error,String errorMsgArgument) {
+    if (CollectionUtils.isEmpty (value)) {
+      throw new ProjectCommonException(
+              error.getErrorCode(),
+              MessageFormat.format(error.getErrorMessage(), errorMsgArgument),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
     }
   }
 }
