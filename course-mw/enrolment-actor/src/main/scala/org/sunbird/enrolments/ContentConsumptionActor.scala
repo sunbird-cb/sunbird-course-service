@@ -333,6 +333,7 @@ class ContentConsumptionActor @Inject() extends BaseEnrolmentActor {
        val updateMap = new java.util.HashMap[String, AnyRef] () {{
             put("lastreadcontentid", lastAccessContent.get(JsonKey.CONTENT_ID_KEY))
             put("lastreadcontentstatus", lastAccessContent.get("status"))
+            put("lrc_progressdetails", lastAccessContent.get("progressdetails"))
             put(JsonKey.LAST_CONTENT_ACCESS_TIME, lastAccessContent.get(JsonKey.LAST_ACCESS_TIME_KEY))
 
        }}
