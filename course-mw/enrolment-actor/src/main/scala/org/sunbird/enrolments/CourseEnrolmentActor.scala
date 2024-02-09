@@ -447,30 +447,31 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                 }
                 val allEnrolledCourses = new java.util.ArrayList[java.util.Map[String, AnyRef]]
                 val version = request.getContext.get("version")
-                if(version.equals("v1")) {
-                if(CollectionUtils.isNotEmpty(courseIds)){
-                    val enrolmentList: java.util.List[java.util.Map[String, AnyRef]] = addCourseDetails(activeEnrolments, courseIds, request, false)
-                    if (enrolmentList != null) {
-                        allEnrolledCourses.addAll(enrolmentList)
-                    }
-                }
-                if(CollectionUtils.isNotEmpty(secureCourseIds)){
-                    val secureCourseEnrolmentList: java.util.List[java.util.Map[String, AnyRef]] = addCourseDetails(activeEnrolments, secureCourseIds, request, true)
-                    if (secureCourseEnrolmentList != null) {
-                        allEnrolledCourses.addAll(secureCourseEnrolmentList)
-                    }
-                }
-                }
-                else {
+                if ("v2".equals(version)) {
                     val enrolmentList: java.util.List[java.util.Map[String, AnyRef]] = addCourseDetails_v2(activeEnrolments)
                     if (enrolmentList != null) {
                         allEnrolledCourses.addAll(enrolmentList)
                     }
                 }
+                else {
+                    if (CollectionUtils.isNotEmpty(courseIds)) {
+                        val enrolmentList: java.util.List[java.util.Map[String, AnyRef]] = addCourseDetails(activeEnrolments, courseIds, request, false)
+                        if (enrolmentList != null) {
+                            allEnrolledCourses.addAll(enrolmentList)
+                        }
+                    }
+                    if (CollectionUtils.isNotEmpty(secureCourseIds)) {
+                        val secureCourseEnrolmentList: java.util.List[java.util.Map[String, AnyRef]] = addCourseDetails(activeEnrolments, secureCourseIds, request, true)
+                        if (secureCourseEnrolmentList != null) {
+                            allEnrolledCourses.addAll(secureCourseEnrolmentList)
+                        }
+                    }
+                }
                 val updatedEnrolmentList = updateProgressData(allEnrolledCourses, userId, allCourseIds, request.getRequestContext)
-                if(version.equals("v1"))
-                addBatchDetails(updatedEnrolmentList, request)
-                else addBatchDetails_v2(updatedEnrolmentList, request)
+                if ("v2".equals(version))
+                    addBatchDetails_v2(updatedEnrolmentList, request)
+                else
+                    addBatchDetails(updatedEnrolmentList, request)
 
             } else new java.util.ArrayList[java.util.Map[String, AnyRef]]()
         }
