@@ -40,6 +40,8 @@ import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
+import scala.util.Try
+
 class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") courseBatchNotificationActorRef: ActorRef
                                     )(implicit val  cacheUtil: RedisCacheUtil ) extends BaseEnrolmentActor {
 
@@ -159,8 +161,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         logger.info(request.getRequestContext,"CourseEnrolmentActor :: list :: UserId = " + userId)
         try{
             val response = if (isCacheEnabled && request.getContext.get("cache").asInstanceOf[Boolean])
-                getCachedEnrolmentList(userId, () => getEnrolmentList(request, userId, courseIdList))
-            else getEnrolmentList(request, userId, courseIdList)
+                getCachedEnrolmentList(userId, () => getEnrolmentList(request, userId, courseIdList)) else getEnrolmentList(request, userId, courseIdList)
             sender().tell(response, self)
         }catch {
             case e: Exception =>
@@ -399,12 +400,10 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             val progress: Int = enrolment.getOrDefault("progress", 0.asInstanceOf[AnyRef]).asInstanceOf[Int]
             enrolment.put("status", getCompletionStatus(progress, leafNodesCount).asInstanceOf[AnyRef])
             enrolment.put("completionPercentage", getCompletionPerc(progress, leafNodesCount).asInstanceOf[AnyRef])
-            val lrc_progress: String = enrolment.get(JsonKey.LRC_PROGRESS_DETAILS).asInstanceOf[String]
-            var mappedValue: util.Map[String, AnyRef] = new util.HashMap[String, AnyRef]()
-            if (lrc_progress != null) {
-                val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
-                mappedValue = objectMapper.readValue(lrc_progress, classOf[util.Map[String, AnyRef]])
-            }
+            val lrcProgress: String = Option(enrolment.get(JsonKey.LRC_PROGRESS_DETAILS).asInstanceOf[String]).getOrElse("")
+            val mappedValue: util.Map[String, AnyRef] = Try {
+                new ObjectMapper().registerModule(DefaultScalaModule).readValue(lrcProgress, classOf[util.Map[String, AnyRef]])
+            }.getOrElse(new util.HashMap[String, AnyRef]())
             enrolment.put(JsonKey.LRC_PROGRESS_DETAILS, mappedValue)
         })
         enrolments
