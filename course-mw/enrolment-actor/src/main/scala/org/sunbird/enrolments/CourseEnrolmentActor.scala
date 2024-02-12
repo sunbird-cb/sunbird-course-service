@@ -40,6 +40,8 @@ import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
+import scala.util.Try
+
 class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") courseBatchNotificationActorRef: ActorRef
                                     )(implicit val  cacheUtil: RedisCacheUtil ) extends BaseEnrolmentActor {
 
@@ -398,6 +400,11 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             val progress: Int = enrolment.getOrDefault("progress", 0.asInstanceOf[AnyRef]).asInstanceOf[Int]
             enrolment.put("status", getCompletionStatus(progress, leafNodesCount).asInstanceOf[AnyRef])
             enrolment.put("completionPercentage", getCompletionPerc(progress, leafNodesCount).asInstanceOf[AnyRef])
+            val lrcProgress: String = Option(enrolment.get(JsonKey.LRC_PROGRESS_DETAILS).asInstanceOf[String]).getOrElse("")
+            val mappedValue: util.Map[String, AnyRef] = Try {
+                new ObjectMapper().registerModule(DefaultScalaModule).readValue(lrcProgress, classOf[util.Map[String, AnyRef]])
+            }.getOrElse(new util.HashMap[String, AnyRef]())
+            enrolment.put(JsonKey.LRC_PROGRESS_DETAILS, mappedValue)
         })
         enrolments
     }
