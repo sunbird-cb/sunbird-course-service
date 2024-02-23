@@ -462,6 +462,7 @@ public interface ResponseMessage {
     String USER_DOES_NOT_HAVE_ACCESS = "User doesn't have access to this Course Id";
     String CURRENT_BATCH_SIZE_PARAMETER = "Request body has invalid/missing parameter 'currentBatchSize' in batchAttributes.";
     String COURSE_DOES_NOT_HAVE_BATCH = "Course doesn't have any batch.";
+    String NOT_OPEN_BATCH ="Not an open batch";
   }
 
   interface Key {
@@ -852,5 +853,6 @@ public interface ResponseMessage {
     String USER_DOES_NOT_HAVE_ACCESS = "USER_DOES_NOT_HAVE_ACCESS";
     String CURRENT_BATCH_SIZE_INVALID =  "INVALID_FIELD_CURRENT_BATCH_SIZE";
     String COURSE_DOES_NOT_HAVE_BATCH = "COURSE_DOES_NOT_HAVE_BATCH";
+    String NOT_OPEN_BATCH ="NOT_OPEN_BATCH";
   }
 }

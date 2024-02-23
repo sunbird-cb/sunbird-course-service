@@ -541,6 +541,11 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
         val batchId: String = request.get(JsonKey.BATCH_ID).asInstanceOf[String]
         val batchData: CourseBatch = courseBatchDao.readById(programId, batchId, request.getRequestContext)
+        val verifyBatchType: Boolean = Option(request.getContext.get("verifyBatchType").asInstanceOf[Boolean]).getOrElse(false)
+        if(verifyBatchType && !("open".equalsIgnoreCase(batchData.getEnrollmentType))) {
+            //throw error
+            ProjectCommonException.throwClientErrorException(ResponseCode.notOpenBatch);
+        }
         val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, programId, batchId)
         val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
         validateEnrolment(batchData, enrolmentData, true)

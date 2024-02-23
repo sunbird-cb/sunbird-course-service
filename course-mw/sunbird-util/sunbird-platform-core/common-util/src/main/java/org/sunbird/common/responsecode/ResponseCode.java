@@ -839,6 +839,9 @@ public enum ResponseCode {
   courseDoesNotHaveBatch(
           ResponseMessage.Key.COURSE_DOES_NOT_HAVE_BATCH,
           ResponseMessage.Message.COURSE_DOES_NOT_HAVE_BATCH),
+  notOpenBatch(
+          ResponseMessage.Key.NOT_OPEN_BATCH,
+          ResponseMessage.Message.NOT_OPEN_BATCH),
 
   accessDeniedToEnrolOrUnenrolCourse(ResponseMessage.Key.USER_DOES_NOT_HAVE_ACCESS,ResponseMessage.Message.USER_DOES_NOT_HAVE_ACCESS),
   OK(200),
