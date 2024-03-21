@@ -848,15 +848,15 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
 
   @Override
   public Response getCountOfRecordByIdentifier(
-          RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields) {
+          RequestContext requestContext, String keyspaceName, String tableName, Object key, String field) {
     long startTime = System.currentTimeMillis();
     logger.debug(requestContext, "Cassandra Service getRecordBy key method started at ==" + startTime);
     Response response = new Response();
     try {
       Session session = connectionManager.getSession(keyspaceName);
       Builder selectBuilder;
-      if (CollectionUtils.isNotEmpty(fields)) {
-        selectBuilder = QueryBuilder.select(fields.toArray(new String[fields.size()]));
+      if (StringUtils.isNotEmpty(field)) {
+        selectBuilder = QueryBuilder.select().count(field);
       } else {
         selectBuilder = QueryBuilder.select().countAll();
       }

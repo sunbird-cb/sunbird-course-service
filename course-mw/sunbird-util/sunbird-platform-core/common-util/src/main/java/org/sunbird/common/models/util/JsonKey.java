@@ -1137,6 +1137,6 @@ public final class JsonKey {
   public static final String ADD_INFO = "addinfo";
   public static final String USERID_LIST="userIdList";
   public static final String LRC_PROGRESS_DETAILS = "lrcProgressDetails";
-
+  public static final String USERS_COUNT = "system.count(userid)";
   private JsonKey() {}
 }

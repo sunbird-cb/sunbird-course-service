@@ -303,5 +303,5 @@ public interface CassandraOperation {
    */
   Response getRecordByIdentifierWithPage(RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields, String pageString, int limit);
 
-  Response getCountOfRecordByIdentifier(RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields);
+  Response getCountOfRecordByIdentifier(RequestContext requestContext, String keyspaceName, String tableName, Object key, String field);
 }

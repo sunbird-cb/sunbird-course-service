@@ -184,8 +184,8 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     int currentOffSet = 1;
     String currentPagingState = null;
     Response countResponse = cassandraOperation.getCountOfRecordByIdentifier(requestContext, KEYSPACE_NAME,
-            ENROLMENT_BATCH_LOOKUP, queryMap, null);
-    Long count = (Long) (((List<Map<String, Object>>)countResponse.getResult().get("response")).get(0)).get("count");
+            ENROLMENT_BATCH_LOOKUP, queryMap, JsonKey.USER_ID);
+    Long count = (Long) (((List<Map<String, Object>>)countResponse.getResult().get("response")).get(0)).get(JsonKey.USERS_COUNT);
     do {
       Response response = cassandraOperation.getRecordByIdentifierWithPage(requestContext, KEYSPACE_NAME,
           ENROLMENT_BATCH_LOOKUP, queryMap,
