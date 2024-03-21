@@ -183,6 +183,9 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     String previousPageId = null;
     int currentOffSet = 1;
     String currentPagingState = null;
+    Response countResponse = cassandraOperation.getCountOfRecordByIdentifier(requestContext, KEYSPACE_NAME,
+            ENROLMENT_BATCH_LOOKUP, queryMap, null);
+    Long count = (Long) (((List<Map<String, Object>>)countResponse.getResult().get("response")).get(0)).get("count");
     do {
       Response response = cassandraOperation.getRecordByIdentifierWithPage(requestContext, KEYSPACE_NAME,
           ENROLMENT_BATCH_LOOKUP, queryMap,
@@ -225,9 +228,9 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
       if (currentOffSet >= limit) {
         currentOffSet = currentOffSet - limit;
       }
-      result.put(JsonKey.CURRENT_OFFSET, currentOffSet);
     }
-    result.put(JsonKey.COUNT, userList.size());
+    result.put(JsonKey.CURRENT_OFFSET, (Integer) request.get(JsonKey.CURRENT_OFFSET));
+    result.put(JsonKey.COUNT, count);
     result.put(JsonKey.PARTICIPANTS, userList);
     return result;
   }
