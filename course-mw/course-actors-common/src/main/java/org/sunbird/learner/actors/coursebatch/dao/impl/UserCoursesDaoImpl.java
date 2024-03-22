@@ -247,8 +247,7 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
       for (Object userCourseObj : userCoursesList) {
         if (userCourseObj instanceof Map) {
           Map<String, Object> userCourseMap = (Map<String, Object>) userCourseObj;
-          UserCourses userCourses = mapper.convertValue(userCourseMap, UserCourses.class);
-          convertedUserCoursesList.add(userCourses);
+          convertedUserCoursesList.add(mapper.convertValue(userCourseMap, UserCourses.class));
         }
       }
       return convertedUserCoursesList;
