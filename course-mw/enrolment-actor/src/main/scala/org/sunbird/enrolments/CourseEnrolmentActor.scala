@@ -751,7 +751,18 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
         for (userId <- userIds) {
             try {
-                val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, programId, batchId)
+                var enrolmentData: UserCourses = null
+                val enrolmentDataList: java.util.List[UserCourses] = userCoursesDao.readAll(request.getRequestContext, userId, programId)
+                if (null != enrolmentDataList) {
+                    for (enrolment <- enrolmentDataList) {
+                        if (enrolment.isActive) {
+                            ProjectCommonException.throwClientErrorException(ResponseCode.userAlreadyEnrolledCourse);
+                        }
+                        if (enrolment.getBatchId.equals(batchId)) {
+                            enrolmentData = enrolment
+                        }
+                    }
+                }
                 val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
                 validateEnrolment(batchData, enrolmentData, true)
                 getCoursesForProgramAndEnrol(request, programId, userId, batchId)
