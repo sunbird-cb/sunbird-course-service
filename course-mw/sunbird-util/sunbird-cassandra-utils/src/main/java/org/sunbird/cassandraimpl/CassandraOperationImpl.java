@@ -846,4 +846,46 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
         return response;
   }
 
+  @Override
+  public Response getCountOfRecordByIdentifier(
+          RequestContext requestContext, String keyspaceName, String tableName, Object key, String field) {
+    long startTime = System.currentTimeMillis();
+    logger.debug(requestContext, "Cassandra Service getRecordBy key method started at ==" + startTime);
+    Response response = new Response();
+    try {
+      Session session = connectionManager.getSession(keyspaceName);
+      Builder selectBuilder;
+      if (StringUtils.isNotEmpty(field)) {
+        selectBuilder = QueryBuilder.select().count(field);
+      } else {
+        selectBuilder = QueryBuilder.select().countAll();
+      }
+      Select selectQuery = selectBuilder.from(keyspaceName, tableName);
+      Where selectWhere = selectQuery.where();
+      if (key instanceof String) {
+        selectWhere.and(eq(Constants.IDENTIFIER, key));
+      } else if (key instanceof Map) {
+        Map<String, Object> compositeKey = (Map<String, Object>) key;
+        compositeKey
+                .entrySet()
+                .stream()
+                .forEach(
+                        x -> {
+                          CassandraUtil.createQuery(x.getKey(), x.getValue(), selectWhere);
+                        });
+      }
+      logger.debug(requestContext, selectQuery.getQueryString());
+      ResultSet results = session.execute(selectQuery);
+      response = CassandraUtil.createResponse(results);
+    } catch (Exception e) {
+      logger.error(requestContext, Constants.EXCEPTION_MSG_FETCH + tableName + " : " + e.getMessage(), e);
+      throw new ProjectCommonException(
+              ResponseCode.SERVER_ERROR.getErrorCode(),
+              ResponseCode.SERVER_ERROR.getErrorMessage(),
+              ResponseCode.SERVER_ERROR.getResponseCode());
+    }
+    logQueryElapseTime("getRecordByIdentifier", startTime);
+    return response;
+  }
+
 }
