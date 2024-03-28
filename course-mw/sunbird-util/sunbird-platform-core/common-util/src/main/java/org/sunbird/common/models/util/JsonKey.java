@@ -1138,5 +1138,6 @@ public final class JsonKey {
   public static final String USERID_LIST="userIdList";
   public static final String LRC_PROGRESS_DETAILS = "lrcProgressDetails";
   public static final String USERS_COUNT = "system.count(userid)";
+  public static final String COURSE_ENROLL_ALLOWED_PRIMARY_CATEGORY = "course_enroll_allowed_primary_category";
   private JsonKey() {}
 }
