@@ -103,13 +103,24 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         if (contentData.size() == 0 || !util.Arrays.asList(getConfigValue(JsonKey.COURSE_ENROLL_ALLOWED_PRIMARY_CATEGORY).split(","): _*).contains(contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]))
             ProjectCommonException.throwClientErrorException(ResponseCode.accessDeniedToEnrolOrUnenrolCourse, courseId);
         val batchData: CourseBatch = courseBatchDao.readById( courseId, batchId, request.getRequestContext)
-        val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
+        var enrolmentData: UserCourses = null
+        val enrolmentDataList: java.util.List[UserCourses] = userCoursesDao.readAll(request.getRequestContext, userId, courseId)
+        if (null != enrolmentDataList) {
+            for (enrolment <- enrolmentDataList) {
+                if (enrolment.isActive) {
+                    ProjectCommonException.throwClientErrorException(ResponseCode.userAlreadyEnrolledCourse);
+                }
+                if (enrolment.getBatchId.equals(batchId)) {
+                    enrolmentData = enrolment
+                }
+            }
+        }
         val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
         validateEnrolment(batchData, enrolmentData, true)
         val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId,batchUserData)
         val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, courseId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
-        val hasAccess = ContentUtil.getContentRead(courseId, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
-        if (hasAccess) {
+        //val hasAccess = ContentUtil.getContentRead(courseId, request.getContext.getOrDefault(JsonKey.HEADER, new util.HashMap[String, String]).asInstanceOf[util.Map[String, String]])
+        if (MapUtils.isNotEmpty(contentData)) {
             upsertEnrollment(userId, courseId, batchId, data, dataBatch, (null == enrolmentData), request.getRequestContext)
             logger.info(request.getRequestContext, "CourseEnrolmentActor :: enroll :: Deleting redis for key " + getCacheKey(userId))
             cacheUtil.delete(getCacheKey(userId))
@@ -669,7 +680,18 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         try {
             val userId: String = request.get(JsonKey.USER_ID).asInstanceOf[String]
             val batchId: String = batchData.getBatchId.asInstanceOf[String]
-            val enrolmentData: UserCourses = userCoursesDao.read(request.getRequestContext, userId, courseId, batchId)
+            var enrolmentData: UserCourses = null
+            val enrolmentDataList: java.util.List[UserCourses] = userCoursesDao.readAll(request.getRequestContext, userId, courseId)
+            if (null != enrolmentDataList) {
+                for (enrolment <- enrolmentDataList) {
+                    if (enrolment.isActive) {
+                        ProjectCommonException.throwClientErrorException(ResponseCode.userAlreadyEnrolledCourse);
+                    }
+                    if (enrolment.getBatchId.equals(batchId)) {
+                        enrolmentData = enrolment
+                    }
+                }
+            }
             val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
             validateEnrolment(batchData, enrolmentData, true)
             val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
