@@ -190,7 +190,8 @@ public class CourseBatchDaoImpl implements CourseBatchDao {
     Calendar timeCalendar = Calendar.getInstance();
     timeCalendar.setTime(time);
     String timeZone = ProjectUtil.getConfigValue(JsonKey.SUNBIRD_TIMEZONE);
-    calendar.setTimeZone(TimeZone.getTimeZone(timeZone));
+    TimeZone tz = TimeZone.getTimeZone(timeZone);
+    calendar.setTimeZone(tz);
     log.info("Merging time part {} into date {} with timezone {}", timeStr, map.get(dateType), timeZone);
     calendar.set(Calendar.HOUR_OF_DAY, timeCalendar.get(Calendar.HOUR_OF_DAY));
     calendar.set(Calendar.MINUTE, timeCalendar.get(Calendar.MINUTE));
