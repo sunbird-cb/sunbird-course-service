@@ -722,8 +722,8 @@ public class CourseBatchManagementActor extends BaseActor {
     data.put("createdFor", courseBatch.getOrDefault(JsonKey.COURSE_CREATED_FOR, new ArrayList<>()));
     data.put("startDate", courseBatch.getOrDefault(JsonKey.START_DATE, ""));
     data.put("endDate", courseBatch.getOrDefault(JsonKey.END_DATE, null));
-    data.put("startTime", courseBatch.getOrDefault("startTime", null));
-    data.put("endTime", courseBatch.getOrDefault("endTime", null));
+    data.put("startTime", courseBatch.getOrDefault(JsonKey.START_TIME, null));
+    data.put("endTime", courseBatch.getOrDefault(JsonKey.END_TIME, null));
     data.put("enrollmentType", courseBatch.getOrDefault(JsonKey.ENROLLMENT_TYPE, ""));
     data.put("status", courseBatch.getOrDefault(JsonKey.STATUS, ""));
     data.put("batchAttributes", courseBatch.getOrDefault(CourseJsonKey.BATCH_ATTRIBUTES, new HashMap<String, Object>()));
