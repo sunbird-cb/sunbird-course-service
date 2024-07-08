@@ -198,6 +198,11 @@ public class CourseBatchDaoImpl implements CourseBatchDao {
     calendar.set(Calendar.HOUR_OF_DAY, timeCalendar.get(Calendar.HOUR_OF_DAY));
     calendar.set(Calendar.MINUTE, timeCalendar.get(Calendar.MINUTE));
     calendar.set(Calendar.SECOND, timeCalendar.get(Calendar.SECOND));
+    if(ProjectUtil.getConfigValue(JsonKey.ADD_EXTRA_HOURS_MINS).equalsIgnoreCase("true")){
+      calendar.add(Calendar.HOUR_OF_DAY, 5);
+      calendar.add(Calendar.MINUTE, 30);
+      log.info("Added 5hours 30mins to the start_date and end_date");
+    }
     map.put(dateType, calendar.getTime());
     log.info("Updated date in map with key {}: {}", dateType, calendar.getTime());
   }
