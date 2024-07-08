@@ -185,6 +185,10 @@ public class CourseBatchUtil {
     dateFormat.setTimeZone(TimeZone.getTimeZone(ProjectUtil.getConfigValue(JsonKey.SUNBIRD_TIMEZONE)));
     dateTimeFormat.setTimeZone(TimeZone.getTimeZone(ProjectUtil.getConfigValue(JsonKey.SUNBIRD_TIMEZONE)));
     Map<String, Object> esCourseMap = mapper.convertValue(courseBatch, Map.class);
+    if (courseBatch.getStartTime() != null && courseBatch.getEndTime() != null) {
+      esCourseMap.put("startTime", courseBatch.getStartDate());
+      esCourseMap.put("endTime", courseBatch.getEndDate());
+    }
     changeInDateFormat.forEach(key -> {
       if (null != esCourseMap.get(key))
         esCourseMap.put(key, dateTimeFormat.format(esCourseMap.get(key)));
