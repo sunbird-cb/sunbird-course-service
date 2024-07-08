@@ -42,12 +42,14 @@ public class CourseBatchDaoImpl implements CourseBatchDao {
           String timeType=JsonKey.START_TIME;
           processStartEndDate(map, timeType, dateType);
           map.remove(JsonKey.START_TIME);
+          courseBatch.setStartDate((Date)map.get(dateType));
       }
       if(map.get(JsonKey.END_TIME) != null) {
           String dateType=JsonKey.END_DATE_BATCH;
           String timeType=JsonKey.END_TIME;
           processStartEndDate(map, timeType, dateType);
           map.remove(JsonKey.END_TIME);
+          courseBatch.setEndDate((Date)map.get(dateType));
       }
     return cassandraOperation.insertRecord(
             requestContext, courseBatchDb.getKeySpace(), courseBatchDb.getTableName(), map);
