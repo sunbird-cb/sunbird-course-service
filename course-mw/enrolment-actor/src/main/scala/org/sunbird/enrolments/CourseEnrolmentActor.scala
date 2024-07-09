@@ -62,7 +62,6 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     val redisCollectionIndex = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("redis_collection_index")))
         (ProjectUtil.getConfigValue("redis_collection_index")).toInt else 10
     private val DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd")
-    private val DATE_FORMAT_TIMESTAMP = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSSZ")
     private val pageDbInfo = Util.dbInfoMap.get(JsonKey.USER_KARMA_POINTS_DB)
     private val cassandraOperation = ServiceFactory.getInstance
     val jsonFields = Set[String]("lrcProgressDetails")
@@ -304,7 +303,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     }
 
 
-    def validateEnrolment(batchData: CourseBatch, enrolmentData: UserCourses, isEnrol: Boolean,primaryCategory: String): Unit = {
+    def validateEnrolment(batchData: CourseBatch, enrolmentData: UserCourses, isEnrol: Boolean): Unit = {
         if(null == batchData) ProjectCommonException.throwClientErrorException(ResponseCode.invalidCourseBatchId, ResponseCode.invalidCourseBatchId.getErrorMessage)
 
         if(!(EnrolmentType.inviteOnly.getVal.equalsIgnoreCase(batchData.getEnrollmentType) ||
@@ -314,14 +313,8 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
         if((2 == batchData.getStatus) || (null != batchData.getEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atTime(LocalTime.MAX))))
             ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
 
-        if(!primaryCategory.equalsIgnoreCase("Standalone Assessment") && isEnrol && null != batchData.getEnrollmentEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEnrollmentEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atTime(LocalTime.MAX)))
+        if(isEnrol && null != batchData.getEnrollmentEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEnrollmentEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atTime(LocalTime.MAX)))
             ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchEnrollmentDateEnded, ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage)
-
-
-        if(primaryCategory.equalsIgnoreCase("Standalone Assessment") && isEnrol && null != batchData.getEnrollmentEndDate &&
-          LocalDateTime.now().isAfter(LocalDateTime.parse(DATE_FORMAT_TIMESTAMP.format(batchData.getEnrollmentEndDate))))
-            ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchEnrollmentDateEnded, ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage)
-
 
         if(isEnrol && null != enrolmentData && enrolmentData.isActive) ProjectCommonException.throwClientErrorException(ResponseCode.userAlreadyEnrolledCourse, ResponseCode.userAlreadyEnrolledCourse.getErrorMessage)
         if(!isEnrol && (null == enrolmentData || !enrolmentData.isActive)) ProjectCommonException.throwClientErrorException(ResponseCode.userNotEnrolledCourse, ResponseCode.userNotEnrolledCourse.getErrorMessage)
@@ -792,8 +785,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                     }
                 }
                 val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
-                val primaryCategory=contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]
-                validateEnrolment(batchData, enrolmentData, true,primaryCategory)
+                validateEnrolment(batchData, enrolmentData, true)
                 getCoursesForProgramAndEnrol(request, programId, userId, batchId)
                 val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
                 val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, programId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
