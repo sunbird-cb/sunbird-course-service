@@ -5,7 +5,7 @@ import java.text.{MessageFormat, SimpleDateFormat}
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, LocalTime, Month, ZoneId}
 import java.util
-import java.util.{Collections, Comparator, Date, UUID}
+import java.util.{Calendar, Collections, Comparator, Date, TimeZone, UUID}
 import akka.actor.ActorRef
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.sunbird.common.models.util.JsonKey
@@ -62,7 +62,6 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
     val redisCollectionIndex = if (StringUtils.isNotBlank(ProjectUtil.getConfigValue("redis_collection_index")))
         (ProjectUtil.getConfigValue("redis_collection_index")).toInt else 10
     private val DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd")
-    private val DATE_FORMAT_TIMESTAMP = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSSZ")
     private val pageDbInfo = Util.dbInfoMap.get(JsonKey.USER_KARMA_POINTS_DB)
     private val cassandraOperation = ServiceFactory.getInstance
     val jsonFields = Set[String]("lrcProgressDetails")
@@ -844,12 +843,25 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
 
         if(primaryCategory.equalsIgnoreCase(JsonKey.STANDALONE_ASSESSMENT) && isEnrol && null != batchData.getEnrollmentEndDate &&
-          LocalDateTime.now().isAfter(LocalDateTime.parse(DATE_FORMAT_TIMESTAMP.format(batchData.getEnrollmentEndDate))))
+          isFutureDate(batchData.getEnrollmentEndDate))
             ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchEnrollmentDateEnded, ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage)
 
         if(isEnrol && null != enrolmentData && enrolmentData.isActive) ProjectCommonException.throwClientErrorException(ResponseCode.userAlreadyEnrolledCourse, ResponseCode.userAlreadyEnrolledCourse.getErrorMessage)
         if(!isEnrol && (null == enrolmentData || !enrolmentData.isActive)) ProjectCommonException.throwClientErrorException(ResponseCode.userNotEnrolledCourse, ResponseCode.userNotEnrolledCourse.getErrorMessage)
         if(!isEnrol && ProjectUtil.ProgressStatus.COMPLETED.getValue == enrolmentData.getStatus) ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
+    }
+
+    /**
+     * Checks if the given enrollment date is a future date compared to the current date/time.
+     *
+     * @param enrollmentEndDate The date to be checked for being in the future.
+     * @return `true` if the enrollment end date is in the future; `false` otherwise.
+     */
+    def isFutureDate(enrollmentEndDate: Date): Boolean = {
+        val inputCal = Calendar.getInstance(TimeZone.getTimeZone(ProjectUtil.getConfigValue(JsonKey.SUNBIRD_TIMEZONE)));
+        inputCal.setTime(enrollmentEndDate)
+        val currentCal = Calendar.getInstance(TimeZone.getTimeZone(ProjectUtil.getConfigValue(JsonKey.SUNBIRD_TIMEZONE)));
+        currentCal.after(inputCal)
     }
 }
 
