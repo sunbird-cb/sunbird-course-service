@@ -42,10 +42,16 @@ public class CourseEnrollmentController extends BaseController {
                   queryParams.put("fields", fields.toArray(new String[0]));
               }
               String userId = (String) request.getContext().getOrDefault(JsonKey.REQUESTED_FOR, request.getContext().get(JsonKey.REQUESTED_BY));
+              if(version.equals("private")){
+                  userId = uid;
+              }
               validator.validateRequestedBy(userId);
               request.getContext().put(JsonKey.USER_ID, userId);
               request.getRequest().put(JsonKey.USER_ID, userId);
               request.getContext().put("version", version);
+              if(version.equals("private")){
+                  request.getContext().put("version", "v2");
+              }
 
               request
                   .getContext()
@@ -268,6 +274,10 @@ public class CourseEnrollmentController extends BaseController {
     }
     public CompletionStage<Result> getEnrolledCourses_v2(String uid, Http.Request httpRequest) {
         return getEnrolledCourses(uid, httpRequest, "v2");
+    }
+
+    public CompletionStage<Result> getEnrolledCourses_v3(String uid, Http.Request httpRequest) {
+        return getEnrolledCourses(uid, httpRequest, "private");
     }
 
     public CompletionStage<Result> enrollProgram(Http.Request httpRequest, Boolean batchType) {
