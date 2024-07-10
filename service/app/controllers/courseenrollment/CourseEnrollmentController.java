@@ -49,9 +49,6 @@ public class CourseEnrollmentController extends BaseController {
               request.getContext().put(JsonKey.USER_ID, userId);
               request.getRequest().put(JsonKey.USER_ID, userId);
               request.getContext().put("version", version);
-              if(version.equals("private")){
-                  request.getContext().put("version", "v2");
-              }
 
               request
                   .getContext()
