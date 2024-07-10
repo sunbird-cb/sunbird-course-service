@@ -5,7 +5,7 @@ import java.text.{MessageFormat, SimpleDateFormat}
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, LocalTime, Month, ZoneId}
 import java.util
-import java.util.{Collections, Comparator, Date, UUID}
+import java.util.{Calendar, Collections, Comparator, Date, TimeZone, UUID}
 import akka.actor.ActorRef
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.sunbird.common.models.util.JsonKey
@@ -579,6 +579,12 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             }
         }
         val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
+        val primaryCategory=contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]
+        if(primaryCategory.equalsIgnoreCase(JsonKey.STANDALONE_ASSESSMENT)) {
+            validateEnrolmentV2(batchData, enrolmentData, true,primaryCategory)
+        }else{
+            validateEnrolment(batchData, enrolmentData, true)
+        }
         validateEnrolment(batchData, enrolmentData, true)
         getCoursesForProgramAndEnrol(request, programId, userId, batchId)
         val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
@@ -785,7 +791,12 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
                     }
                 }
                 val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
-                validateEnrolment(batchData, enrolmentData, true)
+                val primaryCategory=contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]
+                if(primaryCategory.equalsIgnoreCase(JsonKey.STANDALONE_ASSESSMENT)) {
+                    validateEnrolmentV2(batchData, enrolmentData, true,primaryCategory)
+                }else{
+                    validateEnrolment(batchData, enrolmentData, true)
+                }
                 getCoursesForProgramAndEnrol(request, programId, userId, batchId)
                 val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
                 val data: java.util.Map[String, AnyRef] = createUserEnrolmentMap(userId, programId, batchId, enrolmentData, request.getContext.getOrDefault(JsonKey.REQUEST_ID, "").asInstanceOf[String])
@@ -816,6 +827,47 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             resp.put(JsonKey.RESPONSE, response)
         }
         sender().tell(resp, self)
+    }
+
+    /**
+     * Validates enrolment based on various conditions.
+     *
+     * @param batchData     CourseBatch object containing batch details.
+     * @param enrolmentData UserCourses object containing user's enrolment details.
+     * @param isEnrol       Boolean indicating whether user is attempting to enrol or not.
+     * @param primaryCategory Primary category of the course.
+     */
+    def validateEnrolmentV2(batchData: CourseBatch, enrolmentData: UserCourses, isEnrol: Boolean,primaryCategory: String): Unit = {
+        if(null == batchData)
+            ProjectCommonException.throwClientErrorException(ResponseCode.invalidCourseBatchId, ResponseCode.invalidCourseBatchId.getErrorMessage)
+
+        if(!(EnrolmentType.inviteOnly.getVal.equalsIgnoreCase(batchData.getEnrollmentType) ||
+          EnrolmentType.open.getVal.equalsIgnoreCase(batchData.getEnrollmentType)))
+            ProjectCommonException.throwClientErrorException(ResponseCode.enrollmentTypeValidation, ResponseCode.enrollmentTypeValidation.getErrorMessage)
+
+        if((2 == batchData.getStatus) || (null != batchData.getEndDate && LocalDateTime.now().isAfter(LocalDate.parse(DATE_FORMAT.format(batchData.getEndDate), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atTime(LocalTime.MAX))))
+            ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
+
+        if(primaryCategory.equalsIgnoreCase(JsonKey.STANDALONE_ASSESSMENT) && isEnrol && null != batchData.getEnrollmentEndDate &&
+          isFutureDate(batchData.getEnrollmentEndDate))
+            ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchEnrollmentDateEnded, ResponseCode.courseBatchEnrollmentDateEnded.getErrorMessage)
+
+        if(isEnrol && null != enrolmentData && enrolmentData.isActive) ProjectCommonException.throwClientErrorException(ResponseCode.userAlreadyEnrolledCourse, ResponseCode.userAlreadyEnrolledCourse.getErrorMessage)
+        if(!isEnrol && (null == enrolmentData || !enrolmentData.isActive)) ProjectCommonException.throwClientErrorException(ResponseCode.userNotEnrolledCourse, ResponseCode.userNotEnrolledCourse.getErrorMessage)
+        if(!isEnrol && ProjectUtil.ProgressStatus.COMPLETED.getValue == enrolmentData.getStatus) ProjectCommonException.throwClientErrorException(ResponseCode.courseBatchAlreadyCompleted, ResponseCode.courseBatchAlreadyCompleted.getErrorMessage)
+    }
+
+    /**
+     * Checks if the given enrollment date is a future date compared to the current date/time.
+     *
+     * @param enrollmentEndDate The date to be checked for being in the future.
+     * @return `true` if the enrollment end date is in the future; `false` otherwise.
+     */
+    def isFutureDate(enrollmentEndDate: Date): Boolean = {
+        val inputCal = Calendar.getInstance(TimeZone.getTimeZone(ProjectUtil.getConfigValue(JsonKey.SUNBIRD_TIMEZONE)));
+        inputCal.setTime(enrollmentEndDate)
+        val currentCal = Calendar.getInstance(TimeZone.getTimeZone(ProjectUtil.getConfigValue(JsonKey.SUNBIRD_TIMEZONE)));
+        currentCal.after(inputCal)
     }
 }
 
