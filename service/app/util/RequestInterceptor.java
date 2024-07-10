@@ -46,6 +46,7 @@ public class RequestInterceptor {
     apiHeaderIgnoreMap.put("/v1/course/admin/enroll", var);
     apiHeaderIgnoreMap.put("/v1/course/admin/unenroll", var);
     apiHeaderIgnoreMap.put("/v1/activate-started/course/batches/status", var);
+    apiHeaderIgnoreMap.put("/private/v3/user/courses/list/:uid", var);
   }
 
   /**
