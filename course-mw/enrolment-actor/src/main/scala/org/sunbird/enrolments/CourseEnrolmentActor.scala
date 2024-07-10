@@ -579,6 +579,12 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
             }
         }
         val batchUserData: BatchUser = batchUserDao.read(request.getRequestContext, batchId, userId)
+        val primaryCategory=contentData.get(JsonKey.PRIMARYCATEGORY).asInstanceOf[String]
+        if(primaryCategory.equalsIgnoreCase(JsonKey.STANDALONE_ASSESSMENT)) {
+            validateEnrolmentV2(batchData, enrolmentData, true,primaryCategory)
+        }else{
+            validateEnrolment(batchData, enrolmentData, true)
+        }
         validateEnrolment(batchData, enrolmentData, true)
         getCoursesForProgramAndEnrol(request, programId, userId, batchId)
         val dataBatch: util.Map[String, AnyRef] = createBatchUserMapping(batchId, userId, batchUserData)
